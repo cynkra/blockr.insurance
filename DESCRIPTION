@@ -9,6 +9,7 @@ Authors@R:
            comment = c(ORCID = "0000-0002-7192-7044"))
 Description: Provides insurance datasets and example workflows for blockr,
     including the French Motor TPL (freMTPL2) portfolio analysis example.
+    Data is loaded from the CASdatasets package.
 License: GPL (>= 3)
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
@@ -16,12 +17,14 @@ RoxygenNote: 7.3.3
 Imports:
     blockr.core,
     dplyr,
-    readr
+    utils
 Suggests:
+    CASdatasets,
     blockr,
     blockr.bi,
     blockr.dag,
     blockr.dplyr,
     blockr.ggplot,
     testthat (>= 3.0.0)
+Additional_repositories: http://cas.uqam.ca/pub/
 Config/testthat/edition: 3

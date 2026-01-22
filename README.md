@@ -1,5 +1,4 @@
 # blockr.insurance
-
 Insurance datasets and example workflows for [blockr](https://github.com/BristolMyersSquibb/blockr).
 
 ## Installation
@@ -13,7 +12,7 @@ remotes::install_github("cynkra/blockr.insurance")
 
 ### freMTPL2 Frequency Dataset
 
-The package includes the French Motor Third Party Liability (freMTPL2) frequency dataset from the [CASdatasets](http://cas.uqam.ca/) R package. This is a standard actuarial benchmark dataset with ~678K motor insurance policies.
+The package provides access to the French Motor Third Party Liability (freMTPL2) frequency dataset from the [CASdatasets](http://cas.uqam.ca/) R package. This is a standard actuarial benchmark dataset with ~678K motor insurance policies.
 
 ```r
 library(blockr.insurance)

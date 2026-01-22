@@ -1,7 +1,8 @@
 #' Load freMTPL2 Frequency Data
 #'
-#' Loads the French Motor Third Party Liability (freMTPL2) frequency dataset,
-#' containing ~678K motor insurance policies with claim counts.
+#' Loads the French Motor Third Party Liability (freMTPL2) frequency dataset
+#' from the CASdatasets package. Contains ~678K motor insurance policies with
+#' claim counts.
 #'
 #' @param sample If TRUE, returns a 10% sample for faster demos. Default FALSE.
 #'
@@ -23,12 +24,16 @@
 #'
 #' @details
 #' The freMTPL2 dataset is a standard actuarial benchmark dataset from the
-#' CASdatasets R package. It contains French motor third-party liability
-#' insurance data suitable for frequency modeling.
+#' CASdatasets R package (http://cas.uqam.ca/). It contains French motor
+#' third-party liability insurance data suitable for frequency modeling.
+#'
+#' Install CASdatasets with:
+#' `install.packages("CASdatasets", repos = "http://cas.uqam.ca/pub/", type = "source")`
 #'
 #' @export
 #'
 #' @examples
+#' \dontrun{
 #' # Load full dataset
 #' data <- fremtpl2_freq()
 #' nrow(data)
@@ -36,9 +41,18 @@
 #' # Load 10% sample for quick demos
 #' sample_data <- fremtpl2_freq(sample = TRUE)
 #' nrow(sample_data)
+#' }
 fremtpl2_freq <- function(sample = FALSE) {
-  path <- system.file("extdata", "freMTPL2freq.csv", package = "blockr.insurance")
-  data <- readr::read_csv(path, show_col_types = FALSE)
+  if (!requireNamespace("CASdatasets", quietly = TRUE)) {
+    stop(
+      "CASdatasets package required. Install with:\n",
+      "install.packages('CASdatasets', repos = 'http://cas.uqam.ca/pub/', type = 'source')",
+      call. = FALSE
+    )
+  }
+  env <- new.env()
+  utils::data("freMTPL2freq", package = "CASdatasets", envir = env)
+  data <- dplyr::as_tibble(env$freMTPL2freq)
   if (sample) {
     set.seed(42)
     data <- dplyr::slice_sample(data, prop = 0.1)

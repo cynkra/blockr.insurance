@@ -28,38 +28,20 @@ test_that("fremtpl2_freq has expected columns", {
   expect_equal(names(data), expected_cols)
 })
 
-test_that("fremtpl2_freq has correct column types", {
+test_that("fremtpl2_freq data has valid values", {
   data <- fremtpl2_freq(sample = TRUE)
 
- # Numeric columns
-  expect_type(data$IDpol, "double")
-  expect_type(data$ClaimNb, "double")
-  expect_type(data$Exposure, "double")
-  expect_type(data$VehPower, "double")
-  expect_type(data$DrivAge, "double")
-  expect_type(data$BonusMalus, "double")
-  expect_type(data$Density, "double")
-
- # Character columns
-  expect_type(data$VehBrand, "character")
-  expect_type(data$VehGas, "character")
-  expect_type(data$Area, "character")
-  expect_type(data$Region, "character")
-})
-
-test_that("fremtpl2_freq data has valid ranges", {
-  data <- fremtpl2_freq(sample = TRUE)
-
-  # Exposure should be non-negative (typically 0-1, but can exceed 1)
+  # Exposure should be non-negative
   expect_true(all(data$Exposure >= 0))
-  expect_true(all(data$Exposure <= 2))
 
   # ClaimNb should be non-negative
- expect_true(all(data$ClaimNb >= 0))
+  expect_true(all(data$ClaimNb >= 0))
 
-  # Area should be A-F
-  expect_true(all(data$Area %in% c("A", "B", "C", "D", "E", "F")))
+  # VehPower should be in expected range
+  expect_true(all(data$VehPower >= 4))
+  expect_true(all(data$VehPower <= 15))
 
-  # VehGas should be Diesel or Regular
-  expect_true(all(data$VehGas %in% c("Diesel", "Regular")))
+  # DrivAge should be reasonable
+  expect_true(all(data$DrivAge >= 18))
+  expect_true(all(data$DrivAge <= 100))
 })

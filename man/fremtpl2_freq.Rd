@@ -27,15 +27,20 @@ A tibble with the following columns:
 }
 }
 \description{
-Loads the French Motor Third Party Liability (freMTPL2) frequency dataset,
-containing ~678K motor insurance policies with claim counts.
+Loads the French Motor Third Party Liability (freMTPL2) frequency dataset
+from the CASdatasets package. Contains ~678K motor insurance policies with
+claim counts.
 }
 \details{
 The freMTPL2 dataset is a standard actuarial benchmark dataset from the
-CASdatasets R package. It contains French motor third-party liability
-insurance data suitable for frequency modeling.
+CASdatasets R package (http://cas.uqam.ca/). It contains French motor
+third-party liability insurance data suitable for frequency modeling.
+
+Install CASdatasets with:
+\code{install.packages("CASdatasets", repos = "http://cas.uqam.ca/pub/", type = "source")}
 }
 \examples{
+\dontrun{
 # Load full dataset
 data <- fremtpl2_freq()
 nrow(data)
@@ -43,4 +48,5 @@ nrow(data)
 # Load 10\% sample for quick demos
 sample_data <- fremtpl2_freq(sample = TRUE)
 nrow(sample_data)
+}
 }
