@@ -1,0 +1,27 @@
+Package: blockr.insurance
+Title: Insurance Blocks for Blockr
+Version: 0.0.1
+Authors@R:
+    person(given = "Christoph",
+           family = "Sax",
+           role = c("aut", "cre"),
+           email = "christoph@cynkra.com",
+           comment = c(ORCID = "0000-0002-7192-7044"))
+Description: Provides insurance datasets and example workflows for blockr,
+    including the French Motor TPL (freMTPL2) portfolio analysis example.
+License: GPL (>= 3)
+Encoding: UTF-8
+Roxygen: list(markdown = TRUE)
+RoxygenNote: 7.3.3
+Imports:
+    blockr.core,
+    dplyr,
+    readr
+Suggests:
+    blockr,
+    blockr.bi,
+    blockr.dag,
+    blockr.dplyr,
+    blockr.ggplot,
+    testthat (>= 3.0.0)
+Config/testthat/edition: 3
