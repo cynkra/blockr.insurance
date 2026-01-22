@@ -26,8 +26,16 @@ library(blockr.dag)
 library(blockr.bi)
 library(blockr.dplyr)
 library(blockr.ggplot)
+library(blockr.session)
 
-run_app(
+
+options(
+  "g6R.mode" = "dev",
+  "g6R.layout_on_data_change" = TRUE
+)
+
+# Create a dock board with DAG extension
+board <- new_dock_board(
   blocks = c(
     # =========================================================================
     # DATA LOAD
@@ -147,5 +155,10 @@ run_app(
     new_link("filter", "waterfall_data", "data"),
     new_link("waterfall_data", "waterfall", "data")
   ),
-  extensions = list(new_dag_extension())
+
+  extensions = list(
+    blockr.dag::new_dag_extension()
+  )
 )
+
+serve(board, plugins = custom_plugins(manage_project()))
