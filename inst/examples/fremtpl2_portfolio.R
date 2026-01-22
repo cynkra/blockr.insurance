@@ -2,13 +2,12 @@
 #
 # Interactive exploration of the French Motor Third Party Liability dataset
 # (~678K policies). Demonstrates visual filtering, KPIs, pivot tables,
-# aggregation, ggplot charts, and waterfall visualization using blockr.
+# ggplot charts, and waterfall visualization using blockr.
 #
 # Features:
 # - Visual filter with Area, VehGas, driver age bands, vehicle power bands
 # - KPIs showing total exposure and claims
-# - Pivot table for Area x VehGas breakdown
-# - Aggregate block for claims by segment
+# - Pivot tables for various breakdowns
 # - ggplot bar chart of exposure by area
 # - Waterfall chart showing portfolio metrics progression
 #
@@ -16,7 +15,7 @@
 # - blockr: new_static_block
 # - blockr.dplyr: new_mutate_expr_block
 # - blockr.bi: new_visual_filter_block, new_kpi_block, new_pivot_table_block,
-#              new_aggregate_block, new_waterfall_block
+#              new_waterfall_block
 # - blockr.ggplot: new_ggplot_block
 #
 # Data source: CASdatasets package (freMTPL2freq)
@@ -88,22 +87,24 @@ board <- new_dock_board(
       digits = "0"
     ),
 
-    # Aggregate: Claims by segment
-    frequency = new_aggregate_block(
-      drill_down = c("Area", "DrivAgeBand"),
-      values = c("Exposure", "ClaimNb"),
-      agg_fun = "sum"
+    # Pivot table: Area x DrivAgeBand breakdown
+    frequency = new_pivot_table_block(
+      rows = c("Area", "DrivAgeBand"),
+      measures = c("Exposure", "ClaimNb"),
+      agg_fun = "sum",
+      digits = "0"
     ),
 
     # =========================================================================
     # VISUALIZATION: Exposure distribution by Area
     # =========================================================================
 
-    # Aggregate for chart
-    chart_data = new_aggregate_block(
-      drill_down = "Area",
-      values = "Exposure",
-      agg_fun = "sum"
+    # Pivot table for chart data
+    chart_data = new_pivot_table_block(
+      rows = "Area",
+      measures = "Exposure",
+      agg_fun = "sum",
+      digits = "0"
     ),
 
     # Bar chart of exposure by area
