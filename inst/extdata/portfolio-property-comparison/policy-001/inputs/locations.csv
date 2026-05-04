@@ -1,0 +1,9 @@
+"location_id","country","peril","postcode","tiv","sra_adj","deductible","limit"
+"LOC001","United Kingdom","flood",89260,539000,1,0,454000
+"LOC002","United Kingdom","theft",12223,562000,1.1,5000,390000
+"LOC003","United Kingdom","flood",34712,169000,0.9,0,78000
+"LOC004","United Kingdom","fire",65409,462000,0.9,10000,168000
+"LOC005","United Kingdom","flood",78953,326000,1,5000,117000
+"LOC006","United Kingdom","flood",82300,260000,1.1,500,134000
+"LOC007","United Kingdom","theft",75742,388000,1,500,298000
+"LOC008","United Kingdom","theft",97953,128000,0.9,1000,51000

@@ -81,3 +81,86 @@
 #' @seealso [motor_portfolio] for the matching premium cube.
 #' @keywords datasets
 "motor_losses"
+
+
+#' Property locations — minimal pricing-engine input
+#'
+#' Twenty insured locations, used as the `locations` input table to
+#' [engine_property()] in the property pricing example. Synthetic and
+#' deterministic; built by `data-raw/build_property.R` with `set.seed(1)`.
+#'
+#' @format A data frame with 20 rows and 8 columns:
+#' \describe{
+#'   \item{location_id}{character; `LOC001`..`LOC020`.}
+#'   \item{country}{character; one of Italy / Spain / United Kingdom /
+#'     France / Germany.}
+#'   \item{peril}{character; `fire` / `flood` / `theft`. The covered peril
+#'     for the location — used as a crossfilter dimension in
+#'     `portfolio-explorer.R` but otherwise carried through the engine
+#'     unchanged.}
+#'   \item{postcode}{integer.}
+#'   \item{tiv}{numeric; total insured value.}
+#'   \item{sra_adj}{numeric; site risk adjustment, around 1.}
+#'   \item{deductible}{numeric; per-loss deductible.}
+#'   \item{limit}{numeric; per-loss limit.}
+#' }
+#'
+#' @seealso [property_claims], [property_params], [engine_property()].
+#' @keywords datasets
+"property_locations"
+
+
+#' Property claims — minimal pricing-engine input
+#'
+#' Fifteen historical claims spanning 2020–2024, used as the `claims` input
+#' table to [engine_property()]. Synthetic; built by
+#' `data-raw/build_property.R` with `set.seed(1)`.
+#'
+#' @format A data frame with 15 rows and 5 columns:
+#' \describe{
+#'   \item{claim_id}{character; `CL0001`..`CL0015`.}
+#'   \item{date_of_loss}{Date.}
+#'   \item{country}{character; loss country.}
+#'   \item{paid}{numeric; paid amount.}
+#'   \item{outstanding}{numeric; case reserve.}
+#' }
+#'
+#' @seealso [property_locations], [property_params], [engine_property()].
+#' @keywords datasets
+"property_claims"
+
+
+#' Property pricing parameters — defaults for `engine_property()`
+#'
+#' Named list of three parameter tables consumed by [engine_property()].
+#' Built by `data-raw/build_property.R`.
+#'
+#' @format A list with three data frames:
+#' \describe{
+#'   \item{country_factor}{`country` x `country_factor`; multiplicative
+#'     adjustment per country.}
+#'   \item{base_rate}{`country` x `base_rate`; per-country base rate
+#'     (premium per unit of TIV).}
+#'   \item{expenses}{`producing_country` x `expenses_factor`; expense
+#'     loading applied to risk premium.}
+#' }
+#'
+#' @seealso [property_locations], [property_claims], [engine_property()],
+#'   [property_params_comparison].
+#' @keywords datasets
+"property_params"
+
+
+#' Property pricing parameters — alternative scenario for the explorer demo
+#'
+#' Same shape as [property_params], with the Italian `base_rate` bumped by
+#' 30%. This is the second parameter set the bundled
+#' `inst/examples/portfolio-explorer.R` runs the property portfolio against,
+#' so the resulting per-location diff is non-zero (and concentrated in
+#' Italian locations). Built by `data-raw/build_property.R`.
+#'
+#' @format A list with the same three data frames as [property_params].
+#'
+#' @seealso [property_params], [engine_property()].
+#' @keywords datasets
+"property_params_comparison"

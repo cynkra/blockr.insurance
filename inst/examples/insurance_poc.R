@@ -14,7 +14,11 @@ options(
   blockr.dock_is_locked = FALSE,
   blockr.eval_parent_env = asNamespace("stats"),
   blockr.html_table_preview = TRUE,
-  blockr.session_url_params = TRUE
+  blockr.session_url_params = TRUE,
+  # Dock's hidden-output detection misreports block visibility, so
+  # `lazy_eval = TRUE` (the default) leaves blocks suspended and tables
+  # never render. Force eager evaluation.
+  blockr.lazy_eval = FALSE
 )
 
 library(blockr.core)
@@ -209,32 +213,25 @@ board <- new_dock_board(
     blockr.dag::new_dag_extension()
   ),
 
-  layout = dock_workspaces(
-    Setup = dock_workspace(
-      layout = list("profiles_read", "loss_read", "data", "dag_extension")
+  layout = dock_layouts(
+    Setup = dock_view(
+      "profiles_read", "loss_read", "data", "dag_extension",
+      active = TRUE
     ),
-    Portfolio = dock_workspace(
-      layout = list(
-        "global_filter", "ov_pull", "ov_nonzero", "ov_avg",
-        "ov_kpi", "ov_drill"
-      )
+    Portfolio = dock_view(
+      "global_filter", "ov_pull", "ov_nonzero", "ov_avg",
+      "ov_kpi", "ov_drill"
     ),
-    Profitability = dock_workspace(
-      layout = list(
-        "global_filter",
-        "prof_premium_pull", "prof_premium_sum", "prof_nonzero",
-        "prof_year_chr", "prof_drill"
-      )
+    Profitability = dock_view(
+      "global_filter",
+      "prof_premium_pull", "prof_premium_sum", "prof_nonzero",
+      "prof_year_chr", "prof_drill"
     ),
-    Claims = dock_workspace(
-      layout = list(
-        "global_filter", "claims_pull", "claims_filter", "claims_drill"
-      )
+    Claims = dock_view(
+      "global_filter", "claims_pull", "claims_filter", "claims_drill"
     ),
-    Reserving = dock_workspace(
-      layout = list(
-        "global_filter", "tri_pull", "tri_select", "tri_summary"
-      )
+    Reserving = dock_view(
+      "global_filter", "tri_pull", "tri_select", "tri_summary"
     )
   )
 )

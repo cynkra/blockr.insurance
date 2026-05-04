@@ -1,30 +1,56 @@
 Package: blockr.insurance
-Title: Insurance Blocks for Blockr
-Version: 0.0.1
-Authors@R:
+Title: Insurance Datasets and Example Workflows for Blockr
+Version: 0.0.5
+Authors@R: c(
     person(given = "Christoph",
            family = "Sax",
            role = c("aut", "cre"),
            email = "christoph@cynkra.com",
-           comment = c(ORCID = "0000-0002-7192-7044"))
-Description: Provides insurance datasets and example workflows for blockr,
-    including the French Motor TPL (freMTPL2) portfolio analysis example.
-    Data is loaded from the CASdatasets package.
+           comment = c(ORCID = "0000-0002-7192-7044")),
+    person(given = "David",
+           family = "Granjon",
+           role = "aut"),
+    person(given = "Angelica",
+           family = "Becerra",
+           role = "aut",
+           comment = c(ORCID = "0009-0006-2520-9865")),
+    person(given = "Antoine",
+           family = "Fabri",
+           role = "aut"))
+Description: Bundles a synthesised motor-insurance portfolio
+    ('motor_portfolio') and matching loss-development cube ('motor_losses'),
+    plus a multi-page 'blockr' example workflow that uses them. The
+    underlying data is derived from 'insuranceData::dataCar' (de Jong &
+    Heller, 2008) and 'ChainLadder::MW2014' (Wuthrich & Merz, 2014); a
+    multi-insurer / multi-year dimension is synthesised on top so the
+    example can demonstrate cross-filtering, KPIs, drilldowns, and a
+    development triangle.
 License: GPL (>= 3)
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
 RoxygenNote: 7.3.3
+Depends:
+    R (>= 4.0)
 Imports:
     blockr.core,
+    dm,
     dplyr,
-    utils
+    shiny,
+    htmltools,
+    rlang,
+    stats
 Suggests:
-    CASdatasets,
-    blockr,
+    insuranceData,
+    ChainLadder,
+    blockr.dock,
+    blockr.dm,
+    blockr.dplyr,
+    blockr.io,
     blockr.bi,
     blockr.dag,
-    blockr.dplyr,
-    blockr.ggplot,
+    blockr.session,
+    blockr.sandbox,
+    blockr.extra,
     testthat (>= 3.0.0)
-Additional_repositories: http://cas.uqam.ca/pub/
 Config/testthat/edition: 3
+LazyData: true

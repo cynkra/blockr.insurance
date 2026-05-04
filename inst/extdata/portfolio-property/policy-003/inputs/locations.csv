@@ -1,0 +1,7 @@
+"location_id","country","peril","postcode","tiv","sra_adj","deductible","limit"
+"LOC001","Italy","theft",38770,7859000,1,1000,4503000
+"LOC002","Italy","flood",77325,14276000,1,5000,7160000
+"LOC003","Italy","fire",97712,5635000,1.1,500,2048000
+"LOC004","Italy","flood",63358,12286000,1,500,6455000
+"LOC005","Italy","flood",97370,10132000,1,500,8418000
+"LOC006","Italy","flood",43762,10605000,1.2,500,3957000
