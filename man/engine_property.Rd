@@ -29,13 +29,19 @@ package defaults from \link{property_params} are used. Expected tables:
 A named list with one element, \code{premium}: a data frame with one
 row per insured location and the following columns:
 \itemize{
-\item Location attributes carried through: \code{location_id}, \code{country},
-\code{postcode}, \code{tiv}, \code{sra_adj}, \code{deductible}, \code{limit}.
+\item Location attributes carried through (any column on \code{locations} is
+passed through): \code{location_id}, \code{country}, \code{peril}, \code{postcode},
+\code{tiv}, \code{sra_adj}, \code{deductible}, \code{limit}.
 \item Joined parameters: \code{country_factor}, \code{base_rate}.
 \item Per-location: \code{base_premium}, \code{layer_share}, \code{exposure_premium}.
-\item Broadcast aggregates: \code{total_incurred}, \code{n_claim_years},
-\code{experience_premium}, \code{exposure_premium_total}, \code{credibility},
-\code{risk_premium}, \code{expenses_factor}, \code{model_price}.
+\item Per-location, allocated from policy-grain aggregates pro-rata by
+\code{exposure_premium}: \code{experience_premium}, \code{risk_premium},
+\code{model_price}. Summing each across all locations of a policy
+reproduces the policy aggregate.
+\item Broadcast scalars (constant per policy): \code{total_incurred},
+\code{n_claim_years}, \code{exposure_premium_total}, \code{credibility},
+\code{expenses_factor}. Carried through as metadata; not intended to be
+summed across locations.
 }
 }
 \description{
@@ -50,7 +56,7 @@ comparison schema available downstream.
 \details{
 This is the standard rating-engine signature used in this package: a pure
 function \code{engine(inputs, params) -> outputs} where \code{outputs} is a named
-list of data frames. \code{\link[=new_rating_engine_block]{new_rating_engine_block()}} turns any such function
+list of data frames. \code{\link[=new_price_block]{new_price_block()}} turns any such function
 into a blockr block.
 }
 \examples{

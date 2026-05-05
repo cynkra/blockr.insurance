@@ -1,14 +1,29 @@
 #' @importFrom blockr.core register_blocks
+#' @importFrom rlang .data
 .onLoad <- function(libname, pkgname) {
   blockr.core::register_blocks(
-    "new_rating_engine_block",
-    name = "Rating engine",
+    "new_price_block",
+    name = "Price",
     description = paste(
-      "Run a rating engine — any function with the signature",
-      "engine(inputs, params) -> outputs — on a list of input tables",
-      "and an optional list of parameter tables."
+      "Run a rating engine - any function with the signature",
+      "engine(inputs, params) -> outputs - on a list of input tables",
+      "and an optional list of parameter tables. The engine version is",
+      "selectable at runtime via a dropdown in the block UI."
     ),
     category = "transform",
+    package = pkgname,
+    overwrite = TRUE
+  )
+  blockr.core::register_blocks(
+    "new_portfolio_inputs_block",
+    name = "Portfolio inputs",
+    description = paste(
+      "Reads every policy's inputs/ CSVs (locations + claims) and",
+      "exposes them as a single dm with a policy_id column on each",
+      "table. Pair with new_price_block to run an engine across the",
+      "whole portfolio."
+    ),
+    category = "input",
     package = pkgname,
     overwrite = TRUE
   )

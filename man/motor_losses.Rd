@@ -17,7 +17,8 @@ A data frame with 8,958 rows and 27 columns:
 \item{Num_Claims}{integer; sum of \code{dataCar$numclaims} in segment.}
 \item{Total_Incurred}{numeric; aggregated \code{claimcst0}, scaled by
 company loss-multiplier.}
-\item{DY0..DY15}{numeric; cumulative paid by development year \emph{k},
+\item{DY0,DY1,DY2,DY3,DY4,DY5,DY6,DY7,DY8,DY9,DY10,DY11,DY12,DY13,DY14,DY15}{
+numeric; cumulative paid by development year \emph{k},
 equal to \verb{Total_Incurred × MW2014_proportion(k)}.}
 \item{Latest}{numeric; latest cumulative paid (= \code{DY15} in this synth).}
 \item{Reporting_Threshold}{numeric; constant 1,000,000 — used by the

@@ -54,6 +54,10 @@ property_params <- list(
     country   = countries,
     base_rate = c(0.0015, 0.0012, 0.0010, 0.0013, 0.0009)
   ),
+  cat_factor = data.frame(
+    country    = countries,
+    cat_factor = c(1.30, 1.05, 1.15, 1.10, 1.00)
+  ),
   expenses = data.frame(
     producing_country = "Germany",
     expenses_factor   = 1.25

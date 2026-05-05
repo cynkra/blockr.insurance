@@ -8,10 +8,12 @@
 #
 # Demonstrates the rating-engine pattern: a pure R function
 # `engine(inputs, params) -> outputs` (here `engine_property()`) wrapped in
-# a generic `new_rating_engine_block()`. The engine takes a list of input
+# a generic `new_price_block()`. The engine takes a list of input
 # tables and an optional list of parameter tables, both supplied as `dm`
 # objects from upstream blocks, and returns a list of result tables exposed
-# downstream as a `dm`.
+# downstream as a `dm`. Toggle the engine version via the dropdown in the
+# `pricing` block UI to switch between `engine_property` (v1) and
+# `engine_property_v2` (CAT-loaded).
 
 options(
   # Dock's hidden-output detection misreports block visibility, so
@@ -21,10 +23,10 @@ options(
   blockr.dock_is_locked = FALSE
 )
 
-library(blockr.core)
-library(blockr.dock)
-library(blockr.dm)
-library(blockr.insurance)
+pkgload::load_all("blockr.core")
+pkgload::load_all("blockr.dock")
+pkgload::load_all("blockr.dm")
+pkgload::load_all("blockr.insurance")
 
 board <- new_dock_board(
   blocks = c(
@@ -35,7 +37,7 @@ board <- new_dock_board(
     inputs    = new_dm_block(infer_keys = FALSE),
 
     # === RATING ENGINE ===
-    pricing = new_rating_engine_block(
+    pricing = new_price_block(
       engine  = "engine_property",
       package = "blockr.insurance"
     ),

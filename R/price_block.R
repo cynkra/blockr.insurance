@@ -1,9 +1,14 @@
-#' Rating engine block
+#' Price block — pick an engine, run on inputs (and optional parameters)
 #'
 #' Generic blockr wrapper around a *rating engine* — any function with the
 #' signature `engine(inputs, params) -> outputs`, where `inputs` and
 #' `outputs` are named lists of data frames (or `dm` objects) and `params` is
 #' an optional named list of parameter tables.
+#'
+#' The engine is **selectable at runtime** via a dropdown in the block UI.
+#' Toggling the engine re-evaluates the block — same inputs, different
+#' calculation. This is the lever the SAA workbench demo points at when
+#' walking through "version 1 vs version 2" of a pricing engine.
 #'
 #' The block is variadic and accepts up to two upstream inputs:
 #'
@@ -17,8 +22,9 @@
 #' block can be chained with `new_dm_pull_block()` to extract individual
 #' result tables for inspection or downstream visualisation.
 #'
-#' @param engine Character; name of the engine function. Defaults to
-#'   `"engine_property"` (see [engine_property()]).
+#' @param engine Character; default engine function name. Must be one of
+#'   [available_engines()]. Defaults to the first available
+#'   (`"engine_property"`).
 #' @param package Character; package the engine lives in. Defaults to
 #'   `"blockr.insurance"`. May be `""` for a function in the global
 #'   environment.
@@ -39,7 +45,7 @@
 #'         claims    = new_dataset_block("property_claims",
 #'                                       "blockr.insurance"),
 #'         inputs    = new_dm_block(infer_keys = FALSE),
-#'         pricing   = new_rating_engine_block()
+#'         pricing   = new_price_block()
 #'       ),
 #'       links = c(
 #'         new_link("locations", "inputs",  "locations"),
@@ -51,8 +57,8 @@
 #' }
 #'
 #' @export
-new_rating_engine_block <- function(
-  engine  = "engine_property",
+new_price_block <- function(
+  engine  = available_engines()[[1L]],
   package = "blockr.insurance",
   ...
 ) {
@@ -62,10 +68,9 @@ new_rating_engine_block <- function(
     is.character(package), length(package) == 1L
   )
 
-  engine_call_head <- if (nzchar(package)) {
-    call("::", as.name(package), as.name(engine))
-  } else {
-    as.name(engine)
+  engines <- available_engines()
+  if (!engine %in% engines) {
+    stop("`engine` must be one of: ", paste(engines, collapse = ", "))
   }
 
   blockr.core::new_transform_block(
@@ -75,6 +80,14 @@ new_rating_engine_block <- function(
 
         r_engine  <- shiny::reactiveVal(engine)
         r_package <- shiny::reactiveVal(package)
+
+        shiny::observeEvent(input$engine_select, {
+          if (!is.null(input$engine_select) &&
+              nzchar(input$engine_select) &&
+              input$engine_select != r_engine()) {
+            r_engine(input$engine_select)
+          }
+        })
 
         list(
           expr = shiny::reactive({
@@ -96,6 +109,12 @@ new_rating_engine_block <- function(
               display_nms
             )
 
+            engine_call_head <- if (nzchar(r_package())) {
+              call("::", as.name(r_package()), as.name(r_engine()))
+            } else {
+              as.name(r_engine())
+            }
+
             engine_call <- as.call(c(list(engine_call_head), data_args))
 
             bquote(
@@ -115,14 +134,22 @@ new_rating_engine_block <- function(
     },
 
     ui = function(id) {
+      ns <- shiny::NS(id)
       shiny::tagList(
         shiny::div(
           class = "block-container",
-          shiny::tags$p(
-            class = "text-muted mb-0",
-            "Rating engine: ",
-            shiny::tags$code(
-              if (nzchar(package)) paste0(package, "::", engine) else engine
+          shiny::div(
+            class = "blockr-row",
+            shiny::tags$label(
+              class = "blockr-row__label",
+              "Engine version"
+            ),
+            shiny::selectInput(
+              ns("engine_select"),
+              label   = NULL,
+              choices = available_engines(),
+              selected = engine,
+              width   = "100%"
             )
           )
         )
@@ -142,9 +169,25 @@ new_rating_engine_block <- function(
 
     allow_empty_state = TRUE,
     expr_type = "bquoted",
-    class = c("rating_engine_block", "dm_block"),
+    class = c("price_block", "dm_block"),
     ...
   )
+}
+
+#' Available engines for `new_price_block()`
+#'
+#' List of engine function names exposed by `blockr.insurance` to
+#' [new_price_block()]'s engine dropdown. Add a new engine here when shipping
+#' a new property pricing variant.
+#'
+#' @return Character vector of engine function names.
+#'
+#' @examples
+#' available_engines()
+#'
+#' @export
+available_engines <- function() {
+  c("engine_property", "engine_property_v2")
 }
 
 # Helper copied from blockr.core (not exported there)

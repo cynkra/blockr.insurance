@@ -57,7 +57,7 @@ No insurance-specific blocks. Custom blocks (e.g. waterfall, loss-triangle rende
 
 ## Property pricing
 
-`inst/examples/property_pricing.R` demonstrates the **rating-engine** pattern: a pure R function `engine(inputs, params) -> outputs` (here `engine_property()`) wrapped in `new_rating_engine_block()`. The engine returns a single wide `premium` table at the location grain — one row per insured location, with all price components (`base_premium`, `layer_share`, `exposure_premium`, `risk_premium`, `model_price`, …) as columns. Aggregate quantities are broadcast onto every row so a downstream crossfilter slice keeps the full schema.
+`inst/examples/property_pricing.R` demonstrates the **rating-engine** pattern: a pure R function `engine(inputs, params) -> outputs` (here `engine_property()` or `engine_property_v2()`) wrapped in `new_price_block()`. The engine version is selectable at runtime via a dropdown in the block UI — toggle between v1 and the CAT-loaded v2 without rewiring. The engine returns a single wide `premium` table at the location grain — one row per insured location, with all price components (`base_premium`, `layer_share`, `exposure_premium`, `risk_premium`, `model_price`, …) as columns. Aggregate quantities are broadcast onto every row so a downstream crossfilter slice keeps the full schema.
 
 ```r
 source(system.file("examples", "property_pricing.R", package = "blockr.insurance"))

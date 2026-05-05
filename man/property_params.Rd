@@ -5,12 +5,17 @@
 \alias{property_params}
 \title{Property pricing parameters — defaults for \code{engine_property()}}
 \format{
-A list with three data frames:
+A list with four data frames:
 \describe{
 \item{country_factor}{\code{country} x \code{country_factor}; multiplicative
 adjustment per country.}
 \item{base_rate}{\code{country} x \code{base_rate}; per-country base rate
 (premium per unit of TIV).}
+\item{cat_factor}{\code{country} x \code{cat_factor}; per-country natural-
+catastrophe loading. Consumed by \code{\link[=engine_property_v2]{engine_property_v2()}} only;
+\code{\link[=engine_property]{engine_property()}} (v1) ignores it. Loadings reflect typical
+property-line CAT exposure (Italy earthquake, UK flood, France
+storm), with Germany as the unloaded baseline.}
 \item{expenses}{\code{producing_country} x \code{expenses_factor}; expense
 loading applied to risk premium.}
 }
@@ -19,11 +24,11 @@ loading applied to risk premium.}
 property_params
 }
 \description{
-Named list of three parameter tables consumed by \code{\link[=engine_property]{engine_property()}}.
-Built by \code{data-raw/build_property.R}.
+Named list of parameter tables consumed by \code{\link[=engine_property]{engine_property()}} and
+\code{\link[=engine_property_v2]{engine_property_v2()}}. Built by \code{data-raw/build_property.R}.
 }
 \seealso{
 \link{property_locations}, \link{property_claims}, \code{\link[=engine_property]{engine_property()}},
-\link{property_params_comparison}.
+\code{\link[=engine_property_v2]{engine_property_v2()}}, \link{property_params_comparison}.
 }
 \keyword{datasets}

@@ -10,7 +10,7 @@
 #'
 #' This is the standard rating-engine signature used in this package: a pure
 #' function `engine(inputs, params) -> outputs` where `outputs` is a named
-#' list of data frames. [new_rating_engine_block()] turns any such function
+#' list of data frames. [new_price_block()] turns any such function
 #' into a blockr block.
 #'
 #' @param inputs Named list (or `dm`) with two tables:
@@ -61,6 +61,15 @@ engine_property <- function(inputs, params = NULL) {
                 package = "blockr.insurance", envir = e)
     params <- e$property_params
   }
+
+  if ("policy_id" %in% names(as.data.frame(inputs[["locations"]]))) {
+    return(partition_by_policy(engine_property_one, inputs, params))
+  }
+
+  engine_property_one(inputs, params)
+}
+
+engine_property_one <- function(inputs, params) {
 
   locations <- as.data.frame(inputs[["locations"]])
   claims    <- as.data.frame(inputs[["claims"]])

@@ -114,6 +114,48 @@ read_policy <- function(dir, policy_id, which = c("all", "inputs", "outputs")) {
   )
 }
 
+#' Read all policies' inputs as a long-format named list
+#'
+#' Reads every policy's `inputs/` CSVs (locations + claims) and row-binds
+#' them across policies, adding a `policy_id` column to each table. The
+#' result feeds [engine_property()] / [engine_property_v2()] in their
+#' multi-policy mode (the engine partitions by `policy_id` and runs once
+#' per policy). Use this with [new_price_block()] to drive the SAA
+#' workbench from the bundled portfolio fixtures.
+#'
+#' @param dir Portfolio directory. Defaults to the bundled
+#'   `inst/extdata/portfolio-property/` 5-policy fixture.
+#'
+#' @return Named list with two data frames, `locations` and `claims`,
+#'   each carrying a `policy_id` column.
+#'
+#' @export
+read_portfolio_inputs <- function(dir = default_portfolio_dir()) {
+  pids <- list_policies(dir)
+  if (!length(pids)) {
+    stop("Portfolio directory has no policies: ", dir)
+  }
+
+  locs <- vector("list", length(pids))
+  clms <- vector("list", length(pids))
+  for (i in seq_along(pids)) {
+    inp <- read_policy(dir, pids[[i]], which = "inputs")
+    if (!is.null(inp$locations)) {
+      inp$locations$policy_id <- pids[[i]]
+      locs[[i]] <- inp$locations
+    }
+    if (!is.null(inp$claims)) {
+      inp$claims$policy_id <- pids[[i]]
+      clms[[i]] <- inp$claims
+    }
+  }
+
+  list(
+    locations = do.call(rbind, locs),
+    claims    = do.call(rbind, clms)
+  )
+}
+
 #' Read the portfolio-wide premium table
 #'
 #' Returns the bound `premium.csv` at the portfolio root (one row per

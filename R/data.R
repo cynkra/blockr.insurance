@@ -66,7 +66,8 @@
 #'   \item{Num_Claims}{integer; sum of `dataCar$numclaims` in segment.}
 #'   \item{Total_Incurred}{numeric; aggregated `claimcst0`, scaled by
 #'     company loss-multiplier.}
-#'   \item{DY0..DY15}{numeric; cumulative paid by development year *k*,
+#'   \item{DY0,DY1,DY2,DY3,DY4,DY5,DY6,DY7,DY8,DY9,DY10,DY11,DY12,DY13,DY14,DY15}{
+#'     numeric; cumulative paid by development year *k*,
 #'     equal to `Total_Incurred × MW2014_proportion(k)`.}
 #'   \item{Latest}{numeric; latest cumulative paid (= `DY15` in this synth).}
 #'   \item{Reporting_Threshold}{numeric; constant 1,000,000 — used by the
@@ -132,21 +133,26 @@
 
 #' Property pricing parameters — defaults for `engine_property()`
 #'
-#' Named list of three parameter tables consumed by [engine_property()].
-#' Built by `data-raw/build_property.R`.
+#' Named list of parameter tables consumed by [engine_property()] and
+#' [engine_property_v2()]. Built by `data-raw/build_property.R`.
 #'
-#' @format A list with three data frames:
+#' @format A list with four data frames:
 #' \describe{
 #'   \item{country_factor}{`country` x `country_factor`; multiplicative
 #'     adjustment per country.}
 #'   \item{base_rate}{`country` x `base_rate`; per-country base rate
 #'     (premium per unit of TIV).}
+#'   \item{cat_factor}{`country` x `cat_factor`; per-country natural-
+#'     catastrophe loading. Consumed by [engine_property_v2()] only;
+#'     [engine_property()] (v1) ignores it. Loadings reflect typical
+#'     property-line CAT exposure (Italy earthquake, UK flood, France
+#'     storm), with Germany as the unloaded baseline.}
 #'   \item{expenses}{`producing_country` x `expenses_factor`; expense
 #'     loading applied to risk premium.}
 #' }
 #'
 #' @seealso [property_locations], [property_claims], [engine_property()],
-#'   [property_params_comparison].
+#'   [engine_property_v2()], [property_params_comparison].
 #' @keywords datasets
 "property_params"
 
