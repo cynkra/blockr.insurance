@@ -84,6 +84,59 @@
 "motor_losses"
 
 
+#' ILEC mortality experience — life insurance A/E cube (2013–2017)
+#'
+#' Aggregated US individual life insurance mortality experience, summarised
+#' from the Society of Actuaries' Individual Life Experience Committee
+#' (ILEC) study covering observation years 2013–2017. One row per
+#' `(uw × face_amount_band × observation_year × dur_band1 × ia_band1 ×
+#' gender × insurance_plan × ltp × iy_band1)` cell, with actual and
+#' expected (VBT 2015) deaths summed over the cell — both by policy count
+#' and by face amount.
+#'
+#' Built by `data-raw/build_ilec.R` from the "lean" parquet published by
+#' the SOA Research Institute alongside the
+#' [RILEC](https://github.com/Society-of-actuaries-research-institute/RILEC)
+#' framework (Apache-2.0). The full ILEC release is ~39M rows / 3.4 GB; the
+#' lean cube is the 311K-row version the SOA team prepared for tutorial /
+#' GLM examples. The canonical KPI is the actual-to-expected ratio:
+#' `amount_actual / amount_2015vbt` (or by count) — values near 1 mean
+#' realised mortality matches the VBT 2015 valuation table; > 1 means
+#' worse-than-table experience.
+#'
+#' @format A tibble with 311,462 rows and 13 columns:
+#' \describe{
+#'   \item{uw}{factor; underwriting class as `smoker / n_classes / class`,
+#'     e.g. `N/3/1` (non-smoker, 3-class system, best class). 14 levels.}
+#'   \item{face_amount_band}{factor; banded face amount, 6 levels from
+#'     `01: 0 - 49,999` to `08: 1,000,000+`.}
+#'   \item{observation_year}{integer; calendar year 2013–2017.}
+#'   \item{dur_band1}{factor; policy duration band, 6 levels (`01`, `02`,
+#'     `03`, `04-05`, `06-15`, `16-25`).}
+#'   \item{ia_band1}{factor; issue-age band, 8 levels (`18-24` … `85-99`).}
+#'   \item{gender}{factor; `F` / `M`.}
+#'   \item{insurance_plan}{factor; `Term`, `Perm`, `xL` (UL/VL family),
+#'     `Other`.}
+#'   \item{ltp}{factor; SOA anticipated level-term period (`5 yr` … `30 yr`,
+#'     `Not Level Term`, `Unknown`).}
+#'   \item{iy_band1}{factor; issue-year band (`1900-1989`, `1990-1999`,
+#'     `2000-2009`, `2010+`).}
+#'   \item{amount_2015vbt}{numeric; expected death claim amount under the
+#'     2015 Valuation Basic Table.}
+#'   \item{amount_actual}{integer; observed death claim amount.}
+#'   \item{policy_2015vbt}{numeric; expected death count under VBT 2015.}
+#'   \item{policy_actual}{integer; observed death count.}
+#' }
+#'
+#' @source Society of Actuaries Research Institute, Individual Life
+#'   Experience Committee. ILEC 2013–2017 framework data, lean version:
+#'   <https://github.com/Society-of-actuaries-research-institute/RILEC>.
+#'   Original full release:
+#'   <https://www.soa.org/resources/research-reports/2024/ilec-mort-2012-19>.
+#' @keywords datasets
+"ilec_mortality"
+
+
 #' Property locations — minimal pricing-engine input
 #'
 #' Twenty insured locations, used as the `locations` input table to

@@ -17,6 +17,7 @@ Two synthesised cubes are lazy-loaded:
 |---|---|---|
 | [`motor_portfolio`](`?motor_portfolio`) | 20,921 | Multi-insurer, multi-year motor-insurance portfolio cube. Year (2019–2024) × ten synthetic insurers × Fleet × Vehicle_type × Cover × Age_Class × Gender, with `Vehicles` and `Premium` per segment. |
 | [`motor_losses`](`?motor_losses`) | 8,958 | Loss-development cube at the same grain. `Total_Incurred` plus 16 development years (`DY0`..`DY15`), shaped by `ChainLadder::MW2014`. |
+| [`ilec_mortality`](`?ilec_mortality`) | 311,462 | US individual life insurance mortality experience (SOA ILEC 2013–2017). One row per `(uw × face_amount_band × year × duration_band × age_band × gender × plan × ltp × issue_year_band)` cell with actual and VBT-2015-expected deaths, by count and by face amount. |
 
 ```r
 library(blockr.insurance)
@@ -24,7 +25,7 @@ data(motor_portfolio)
 data(motor_losses)
 ```
 
-Both datasets are derived from plain-CRAN sources (`insuranceData::dataCar` for the policy base, `ChainLadder::MW2014` for the development pattern); a multi-insurer × multi-year dimension is synthesised on top. See `data-raw/README.md` for the full schema and synthesis steps, and the inline help (`?motor_portfolio`, `?motor_losses`).
+The motor cubes are derived from plain-CRAN sources (`insuranceData::dataCar` for the policy base, `ChainLadder::MW2014` for the development pattern); a multi-insurer × multi-year dimension is synthesised on top. `ilec_mortality` is the SOA Research Institute's pre-summarised "lean" version of the ILEC 2013–2017 study (Apache-2.0, [RILEC repo](https://github.com/Society-of-actuaries-research-institute/RILEC)) — real industry data, no synthesis. See `data-raw/README.md` for the full schemas and `?motor_portfolio`, `?motor_losses`, `?ilec_mortality` for inline help.
 
 ## Example workflow
 
@@ -54,6 +55,22 @@ The example uses generic blockr blocks:
 - `blockr.bi` (KPI block), `blockr.sandbox` (drilldown chart)
 
 No insurance-specific blocks. Custom blocks (e.g. waterfall, loss-triangle renderer, per-policy view) are roadmap items.
+
+## Life mortality example
+
+A five-workspace life-insurance dashboard ships in `inst/examples/life.R`, parallel in structure to `motor.R` but built around the actual-to-expected (A/E) ratio against VBT 2015:
+
+| Workspace | Shows |
+|---|---|
+| Setup | `ilec_mortality` dataset, dm wrap, DAG view |
+| Mortality | Global crossfilter on UW class / gender / plan / level-term / age-band / duration / issue-year / face-amount; A/E KPIs (by amount and by count) and A/E by issue-age band |
+| Trend | A/E by amount over `observation_year`, line per `insurance_plan` |
+| Underwriting | A/E by `uw` class split by `dur_band1` — preferred-class wear-off curve |
+| Face_Amount | A/E by `face_amount_band` split by gender — anti-selection at jumbo bands |
+
+```r
+source(system.file("examples", "life.R", package = "blockr.insurance"))
+```
 
 ## Property workbench
 
