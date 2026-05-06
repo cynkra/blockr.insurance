@@ -62,11 +62,13 @@ engine_property <- function(inputs, params = NULL) {
     params <- e$property_params
   }
 
-  if ("policy_id" %in% names(as.data.frame(inputs[["locations"]]))) {
-    return(partition_by_policy(engine_property_one, inputs, params))
+  out <- if ("policy_id" %in% names(as.data.frame(inputs[["locations"]]))) {
+    partition_by_policy(engine_property_one, inputs, params)
+  } else {
+    engine_property_one(inputs, params)
   }
-
-  engine_property_one(inputs, params)
+  out$premium <- apply_labels(out$premium)
+  out
 }
 
 engine_property_one <- function(inputs, params) {

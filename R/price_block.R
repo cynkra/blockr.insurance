@@ -135,21 +135,37 @@ new_price_block <- function(
 
     ui = function(id) {
       ns <- shiny::NS(id)
+      engines <- available_engines()
+      options_json <- jsonlite::toJSON(
+        lapply(engines, function(e) list(value = e)),
+        auto_unbox = TRUE
+      )
       shiny::tagList(
+        price_block_dep(),
         shiny::div(
           class = "block-container",
+          # Aesthetic-row layout — same shape as blockr.bi::aesthetic_row in
+          # tile-block.R: flex row, no border on the outer container, label
+          # on the left as plain text, bordered control on the right. The
+          # Blockr.Select inside carries the only visible border.
           shiny::div(
-            class = "blockr-row",
+            style = paste("display: flex; gap: 8px; flex-wrap: wrap;",
+                          "align-items: center; margin-bottom: 6px;"),
             shiny::tags$label(
-              class = "blockr-row__label",
-              "Engine version"
+              "Engine version",
+              `for` = ns("engine_select"),
+              style = paste("flex: 0 0 auto; margin: 0;",
+                            "font-size: 0.8125rem; color: #6b7280;",
+                            "font-weight: 500; white-space: nowrap;")
             ),
-            shiny::selectInput(
-              ns("engine_select"),
-              label   = NULL,
-              choices = available_engines(),
-              selected = engine,
-              width   = "100%"
+            shiny::div(
+              style = "flex: 1 1 140px; min-width: 0;",
+              shiny::div(
+                id   = ns("engine_select"),
+                `data-blockr-price-select` = "",
+                `data-options`             = options_json,
+                `data-selected`            = engine
+              )
             )
           )
         )

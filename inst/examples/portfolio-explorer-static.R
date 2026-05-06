@@ -3,7 +3,7 @@
 # Run from an R session after installing blockr.insurance:
 #
 #   library(blockr.insurance)
-#   source(system.file("examples", "portfolio_explorer.R",
+#   source(system.file("examples", "portfolio-explorer-static.R",
 #                      package = "blockr.insurance"))
 #
 # The two bundled fixtures (`portfolio-property/` and

@@ -33,8 +33,11 @@ Depends:
     R (>= 4.0)
 Imports:
     blockr.core,
+    blockr.dplyr,
     dm,
     dplyr,
+    htmltools,
+    jsonlite,
     shiny,
     rlang,
     stats

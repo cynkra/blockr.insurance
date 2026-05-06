@@ -151,8 +151,8 @@ read_portfolio_inputs <- function(dir = default_portfolio_dir()) {
   }
 
   list(
-    locations = do.call(rbind, locs),
-    claims    = do.call(rbind, clms)
+    locations = apply_labels(do.call(rbind, locs)),
+    claims    = apply_labels(do.call(rbind, clms))
   )
 }
 

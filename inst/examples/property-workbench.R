@@ -1,7 +1,7 @@
-# Insurance Workbench — Homer Actuarial UI shape, blockr-side replica
+# Property Workbench — Homer Actuarial UI shape, blockr-side replica
 #
 # Run from workspace root:
-#   Rscript blockr.insurance/inst/examples/insurance-workbench.R
+#   Rscript blockr.insurance/inst/examples/property-workbench.R
 #
 # Spec: blockr.design/open/insurance-workbench/
 # Story: same property book, two engine versions (v1 + v2 with CAT loading),
@@ -12,9 +12,8 @@ options(
   blockr.dock_is_locked    = FALSE,
   blockr.eval_parent_env   = asNamespace("stats"),
   blockr.html_table_preview = TRUE,
-  # Dock's hidden-output detection misreports block visibility (per
-  # blockr.insurance/inst/examples/property_pricing.R) — without this,
-  # blocks stay suspended and panels never render.
+  # Dock's hidden-output detection misreports block visibility — without
+  # this, blocks stay suspended and panels never render.
   blockr.lazy_eval         = FALSE
   # shiny.port               = 3838L,
   # shiny.host               = "0.0.0.0"
@@ -26,6 +25,7 @@ pkgload::load_all("blockr.dm")
 pkgload::load_all("blockr.dplyr")
 pkgload::load_all("blockr.bi")
 pkgload::load_all("blockr.extra")
+pkgload::load_all("blockr.session")
 pkgload::load_all("blockr.insurance")
 
 portfolio_dir <- blockr.insurance::default_portfolio_dir()
@@ -79,7 +79,7 @@ board <- new_dock_board(
     # downstream sees only the selected policy's rows.
     policy_scatter = new_drilldown_chart_block(
       chart_type = "scatter",
-      x_col      = "exposure_premium",
+      x_col      = "tiv",
       y_col      = "model_price",
       series_by  = "policy_id",
       block_name = "Policy scatter (click a dot to drill)"
@@ -107,12 +107,11 @@ board <- new_dock_board(
       metric       = "diff",
       block_name   = "Compare v1 vs v2 (portfolio)"
     ),
-    compare_portfolio_drill = new_drilldown_chart_block(
-      chart_type = "bar",
-      group_by   = "country",
-      metric     = "model_price",
-      agg_fn     = "sum",
-      block_name = "Diff in model price by country"
+    compare_portfolio_xfilter = new_crossfilter_block(
+      active_dims = list(.tbl = c("country", "peril", "policy_id")),
+      measure     = ".tbl.model_price",
+      agg_func    = "sum",
+      block_name  = "Diff filter (country / peril / policy)"
     ),
     compare_portfolio_waterfall = new_waterfall_block(
       measures = c("base_premium", "exposure_premium",
@@ -131,9 +130,11 @@ board <- new_dock_board(
       "portfolio_premium", "policy_scatter",
       # Portfolio v2 chain
       "portfolio_inputs", "portfolio_price_v2",
-      # Compare
-      "portfolio_premium", "portfolio_premium_v2",
-      "compare_portfolio", "compare_portfolio"
+      # Compare prep + diff → crossfilter → waterfall
+      # x = v2, y = v1 so `compare_frames` computes v2 - v1 (positive when
+      # v2 increases the price — the natural narrative for CAT loading).
+      "portfolio_premium_v2", "portfolio_premium",
+      "compare_portfolio", "compare_portfolio_xfilter"
     ),
     to = c(
       "portfolio_price",       "portfolio_premium",
@@ -141,7 +142,7 @@ board <- new_dock_board(
       "policy_scatter",        "policy_waterfall",
       "portfolio_price_v2",    "portfolio_premium_v2",
       "compare_portfolio",     "compare_portfolio",
-      "compare_portfolio_drill", "compare_portfolio_waterfall"
+      "compare_portfolio_xfilter", "compare_portfolio_waterfall"
     ),
     input = c(
       "inputs",  "data",
@@ -168,9 +169,9 @@ board <- new_dock_board(
       "policy_scatter", "policy_waterfall"
     ),
     `Compare-Portfolio` = dock_view(
-      "compare_portfolio_drill", "compare_portfolio_waterfall"
+      "compare_portfolio_xfilter", "compare_portfolio_waterfall"
     )
   )
 )
 
-serve(board)
+serve(board, plugins = custom_plugins(c(manage_project())))

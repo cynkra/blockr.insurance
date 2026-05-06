@@ -3,7 +3,7 @@
 # Run from an R session after installing blockr.insurance:
 #
 #   library(blockr.insurance)
-#   source(system.file("examples", "insurance_poc.R", package = "blockr.insurance"))
+#   source(system.file("examples", "motor.R", package = "blockr.insurance"))
 #
 # Five workspaces (Setup / Portfolio / Profitability / Claims / Reserving)
 # operate on the bundled `motor_portfolio` and `motor_losses` datasets. The

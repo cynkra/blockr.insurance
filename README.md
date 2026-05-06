@@ -28,7 +28,7 @@ Both datasets are derived from plain-CRAN sources (`insuranceData::dataCar` for 
 
 ## Example workflow
 
-A five-workspace [blockr](https://github.com/BristolMyersSquibb/blockr) dashboard ships in `inst/examples/insurance_poc.R`:
+A five-workspace [blockr](https://github.com/BristolMyersSquibb/blockr) dashboard ships in `inst/examples/motor.R`:
 
 | Workspace | Shows |
 |---|---|
@@ -42,7 +42,7 @@ A five-workspace [blockr](https://github.com/BristolMyersSquibb/blockr) dashboar
 
 ```r
 library(blockr.insurance)
-source(system.file("examples", "insurance_poc.R", package = "blockr.insurance"))
+source(system.file("examples", "motor.R", package = "blockr.insurance"))
 ```
 
 ### Block stack
@@ -55,19 +55,19 @@ The example uses generic blockr blocks:
 
 No insurance-specific blocks. Custom blocks (e.g. waterfall, loss-triangle renderer, per-policy view) are roadmap items.
 
-## Property pricing
+## Property workbench
 
-`inst/examples/property_pricing.R` demonstrates the **rating-engine** pattern: a pure R function `engine(inputs, params) -> outputs` (here `engine_property()` or `engine_property_v2()`) wrapped in `new_price_block()`. The engine version is selectable at runtime via a dropdown in the block UI — toggle between v1 and the CAT-loaded v2 without rewiring. The engine returns a single wide `premium` table at the location grain — one row per insured location, with all price components (`base_premium`, `layer_share`, `exposure_premium`, `risk_premium`, `model_price`, …) as columns. Aggregate quantities are broadcast onto every row so a downstream crossfilter slice keeps the full schema.
+`inst/examples/property-workbench.R` is the SAA-targeted Homer-Actuarial-UI replica: same property book, two engine versions (`engine_property()` and `engine_property_v2()` with CAT loading), engine version toggleable live via a dropdown on `new_price_block()`, drill into a policy via a scatter click, side-by-side compare at portfolio grain. Five workspaces (Setup / Portfolio / Policy / Compare-Portfolio).
 
 ```r
-source(system.file("examples", "property_pricing.R", package = "blockr.insurance"))
+source(system.file("examples", "property-workbench.R", package = "blockr.insurance"))
 ```
 
-## Portfolio explorer
+## Portfolio explorer (static)
 
 A *portfolio* is a folder of policies, each with `inputs/{locations,claims}.csv`. `run_portfolio(dir)` calls the engine for every policy, writes per-policy `outputs/premium.csv`, and binds them all into a portfolio-root `premium.csv` with an added `policy_id` column.
 
-`inst/examples/portfolio_explorer.R` compares **two pricing scenarios on the same book** (bundled as `portfolio-property/` run with `property_params`, and `portfolio-property-comparison/` run with `property_params_comparison` — same inputs, Italian `base_rate` ×1.30) across four workspaces:
+`inst/examples/portfolio-explorer-static.R` compares **two pricing scenarios on the same book** read from those pre-baked CSVs (bundled as `portfolio-property/` run with `property_params`, and `portfolio-property-comparison/` run with `property_params_comparison` — same inputs, Italian `base_rate` ×1.30) across four workspaces. Read-only, no live engine — superseded by `property-workbench.R` for live work; kept as a static reference.
 
 | Workspace | Shows |
 |---|---|
@@ -77,7 +77,7 @@ A *portfolio* is a folder of policies, each with `inputs/{locations,claims}.csv`
 | Comparison | Per-location `compare_block` on `(policy_id, location_id)`, diff drill-down, and a waterfall summing the diffs across base / exposure / risk / model price |
 
 ```r
-source(system.file("examples", "portfolio_explorer.R", package = "blockr.insurance"))
+source(system.file("examples", "portfolio-explorer-static.R", package = "blockr.insurance"))
 ```
 
 Helpers:
