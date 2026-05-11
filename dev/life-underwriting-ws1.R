@@ -68,10 +68,13 @@ board <- new_dock_board(
       ),
       block_name = "Stub life engine"
     ),
-    kpi    = new_kpi_block(
-      measures   = c("premium"),
-      agg_fun    = "sum",
-      titles     = c(premium = "Quoted premium"),
+    kpi    = new_tile_block(
+      showcase = "number",
+      state = list(
+        aesthetics = list(value = "premium"),
+        stats = list(value = "sum"),
+        formats = list(measure_labels = c(premium = "Quoted premium"))
+      ),
       block_name = "Quoted premium"
     ),
     head   = new_head_block(n = 5L, block_name = "Output preview")

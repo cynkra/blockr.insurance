@@ -178,11 +178,17 @@ board <- new_dock_board(
       ),
       block_name = "Per-year development metrics"
     ),
-    ult_kpi = new_kpi_block(
-      measures = c("Paid_to_date", "Implied_IBNR_from_DY0"),
-      agg_fun  = "sum",
-      titles   = c(Paid_to_date = "Total paid to date",
-                   Implied_IBNR_from_DY0 = "Loss emergence post-DY0"),
+    ult_kpi = new_tile_block(
+      showcase = "number",
+      state = list(
+        aesthetics = list(value = c("Paid_to_date",
+                                    "Implied_IBNR_from_DY0")),
+        stats = list(value = "sum"),
+        formats = list(measure_labels = c(
+          Paid_to_date          = "Total paid to date",
+          Implied_IBNR_from_DY0 = "Loss emergence post-DY0"
+        ))
+      ),
       block_name = "Reserving KPIs"
     ),
     ult_table = new_summary_table_block(

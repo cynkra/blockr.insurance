@@ -76,10 +76,16 @@ board <- new_dock_board(
       ),
       block_name = "Avg_Premium = Premium / Vehicles"
     ),
-    ov_kpi = new_kpi_block(
-      measures = c("Premium", "Vehicles"),
-      agg_fun = "sum",
-      titles = c(Premium = "Total Premium", Vehicles = "Total Vehicles"),
+    ov_kpi = new_tile_block(
+      showcase = "number",
+      state = list(
+        aesthetics = list(value = c("Premium", "Vehicles")),
+        stats = list(value = "sum"),
+        formats = list(measure_labels = c(
+          Premium  = "Total Premium",
+          Vehicles = "Total Vehicles"
+        ))
+      ),
       block_name = "Portfolio KPIs"
     ),
     ov_drill = new_drilldown_chart_block(

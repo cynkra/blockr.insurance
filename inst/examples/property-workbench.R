@@ -51,11 +51,16 @@ board <- new_dock_board(
     ),
 
     # === PORTFOLIO WORKSPACE — KPI + drilldowns ===
-    portfolio_kpi = new_kpi_block(
-      measures = c("model_price", "exposure_premium"),
-      agg_fun  = "sum",
-      titles   = c(model_price = "Total Model Price",
-                   exposure_premium = "Total Exposure Premium"),
+    portfolio_kpi = new_tile_block(
+      showcase = "number",
+      state = list(
+        aesthetics = list(value = c("model_price", "exposure_premium")),
+        stats = list(value = "sum"),
+        formats = list(measure_labels = c(
+          model_price      = "Total Model Price",
+          exposure_premium = "Total Exposure Premium"
+        ))
+      ),
       block_name = "Portfolio KPIs"
     ),
     portfolio_drill_country = new_drilldown_chart_block(

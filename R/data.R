@@ -223,3 +223,163 @@
 #' @seealso [property_params], [engine_property()].
 #' @keywords datasets
 "property_params_comparison"
+
+
+#' VBT 2015 mortality table — base incidence lookup
+#'
+#' One-year mortality rates (qx) from the US Society of Actuaries' 2015
+#' Valuation Basic Table, Relative Risk 100 (standard risk), Age Last
+#' Birthday, Ultimate. Used as the base incidence table in the life
+#' underwriting demo (`dev/life-underwriting-ws3.R`). The same VBT 2015
+#' basis sits behind the `amount_2015vbt` column of [ilec_mortality].
+#'
+#' Built by `data-raw/build_vbt_2015.R` using a Gompertz-Makeham fit
+#' calibrated to published SOA anchor values; agrees with the published
+#' table to within ~10% across ages 20–95. For regulator-grade work, swap
+#' in the exact SOA file from <https://mort.soa.org>.
+#'
+#' @format A tibble with 312 rows and 4 columns:
+#' \describe{
+#'   \item{age}{integer; 18..95.}
+#'   \item{sex}{character; `F` / `M`.}
+#'   \item{smoker}{character; `N` / `Y`.}
+#'   \item{qx}{numeric; probability of death within one year.}
+#' }
+#'
+#' @source Society of Actuaries, 2015 Valuation Basic Table.
+#'   <https://mort.soa.org> (table IDs 3224/3225/3236/3237).
+#' @seealso [incidence_by_coverage] (derived from this), [coverages],
+#'   [uw_factors], [country_adjustment], [annuity_2pct].
+#' @keywords datasets
+"vbt_2015"
+
+
+#' Country incidence-rate adjustment — demo lookup
+#'
+#' Per-country multiplier applied to base incidence in the life
+#' underwriting demo. Synthetic, illustrative values; real per-country
+#' adjustments are insurer-proprietary. Built by
+#' `data-raw/build_life_demo.R`.
+#'
+#' @format A tibble with 5 rows and 2 columns:
+#' \describe{
+#'   \item{country}{factor; `DE`, `ES`, `FR`, `GB`, `IT`.}
+#'   \item{adjustment}{numeric; multiplier around 1.}
+#' }
+#'
+#' @seealso [coverages], [uw_factors], [incidence_by_coverage],
+#'   [annuity_2pct].
+#' @keywords datasets
+"country_adjustment"
+
+
+#' Annuity (capitalization-factor) table at 2% interest — demo lookup
+#'
+#' Capitalization factor per (age, sex) derived from [vbt_2015]
+#' (non-smoker ultimate) at 2% flat interest:
+#' `a(x) = sum_k {k_px} * v^k`, with `v = 1 / 1.02`. Used as the annuity
+#' table in the life underwriting demo to convert `sum_at_risk` into
+#' `SI_Capitalized`. Built by `data-raw/build_life_demo.R`.
+#'
+#' @format A tibble with 156 rows and 3 columns:
+#' \describe{
+#'   \item{age}{integer; 18..95.}
+#'   \item{sex}{factor; `F` / `M`.}
+#'   \item{capitalization_factor}{numeric; declining with age.}
+#' }
+#'
+#' @seealso [coverages], [uw_factors], [incidence_by_coverage],
+#'   [country_adjustment].
+#' @keywords datasets
+"annuity_2pct"
+
+
+#' Incidence rate by coverage — pipeline-ready lookup
+#'
+#' One-year incidence rate keyed on `(coverage_type, age, sex, smoker)`.
+#' Death uses the [vbt_2015] mortality qx unchanged; Disability uses
+#' `1.5 * qx`; CriticalIllness uses `0.5 * qx`. The Disability and
+#' CriticalIllness multipliers are demo-grade proxies — real morbidity
+#' tables are insurer-proprietary; swap them out when wiring up real
+#' incidence data. Built by `data-raw/build_life_demo.R`.
+#'
+#' @format A tibble with 936 rows and 5 columns:
+#' \describe{
+#'   \item{coverage_type}{factor; `Death`, `Disability`, `CriticalIllness`.}
+#'   \item{age}{integer; 18..95.}
+#'   \item{sex}{factor; `F` / `M`.}
+#'   \item{smoker}{factor; `N` / `Y`.}
+#'   \item{incidence_rate}{numeric; one-year incidence rate.}
+#' }
+#'
+#' @seealso [vbt_2015], [coverages], [uw_factors].
+#' @keywords datasets
+"incidence_by_coverage"
+
+
+#' Underwriting factors — UWR-editable per coverage_type
+#'
+#' The underwriter's worksheet for the one policy being priced. Each row
+#' is one coverage_type with the three multiplicative UW factors that make
+#' up `UW_adjustment1 = uw_health * uw_occupation * uw_hobby` in the
+#' formula chain. Factors live at this grain because a single submission
+#' can carry very different risk profiles per coverage (e.g. construction
+#' workers: high `uw_occupation` on Disability, neutral on Death and
+#' CriticalIllness).
+#'
+#' Built by `data-raw/build_life_demo.R`. All factors default to `1`
+#' (neutral) and are overwritten by the UWR via the grid block in the
+#' workspace.
+#'
+#' @format A tibble with 3 rows and 4 columns:
+#' \describe{
+#'   \item{coverage_type}{factor; `Death`, `Disability`, `CriticalIllness`.}
+#'   \item{uw_health}{numeric; health-factor multiplier. Default `1`.}
+#'   \item{uw_occupation}{numeric; occupation-factor multiplier. Default `1`.}
+#'   \item{uw_hobby}{numeric; hobby-factor multiplier. Default `1`.}
+#' }
+#'
+#' @seealso [coverages], [incidence_by_coverage], [country_adjustment],
+#'   [annuity_2pct].
+#' @keywords datasets
+"uw_factors"
+
+
+#' Life-insurance coverages — main pipeline input
+#'
+#' Per-(life, coverage) input table for the life underwriting demo
+#' (`dev/life-underwriting-ws3.R`). One row per insured life **per
+#' coverage**, with demographic columns (`dob`, `sex`, `smoker`, `country`)
+#' replicated across that life's coverage rows for join simplicity. All
+#' lives belong to the same single policy being priced (no `policy_id`
+#' field — URW prices one submission at a time, with the census upload
+#' containing every employee covered by that submission).
+#'
+#' Coverage-specific values:
+#' - `sum_at_risk` differs by coverage (Death is the headline benefit;
+#'   Disability is roughly 80% of Death; CriticalIllness is a smaller
+#'   lump sum, ~30% of Death).
+#' - `additive_rate` is the per-coverage specific-risk load Antoine
+#'   describes (hazardous hobby, medical history). Defaults to `0`; not
+#'   edited via the UWR grid in this demo (the grid edits [uw_factors]
+#'   instead).
+#'
+#' Synthetic; built by `data-raw/build_life_demo.R` with `set.seed(42)`.
+#'
+#' @format A tibble with 4,500 rows (1,500 lives x 3 coverages) and 8
+#'   columns:
+#' \describe{
+#'   \item{person_id}{character; `P00001`..`P01500`.}
+#'   \item{dob}{Date; ages roughly 18–95 at the 2026-05-11 valuation date.}
+#'   \item{sex}{factor; `F` / `M`.}
+#'   \item{smoker}{factor; `N` / `Y`.}
+#'   \item{country}{factor; one of `DE`, `ES`, `FR`, `GB`, `IT`.}
+#'   \item{coverage_type}{factor; `Death`, `Disability`, `CriticalIllness`.}
+#'   \item{sum_at_risk}{numeric; insured sum per coverage.}
+#'   \item{additive_rate}{numeric; UWR-set extra incidence load. Default `0`.}
+#' }
+#'
+#' @seealso [uw_factors], [incidence_by_coverage], [country_adjustment],
+#'   [annuity_2pct].
+#' @keywords datasets
+"coverages"

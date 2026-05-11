@@ -164,15 +164,20 @@ board <- new_dock_board(
       ),
       block_name = "SCR / MCR ratios"
     ),
-    cap_kpi = new_kpi_block(
-      measures = c("SCR", "MCR", "EOF_Total",
-                   "SCR_Ratio_pct", "MCR_Ratio_pct"),
-      agg_fun = "sum",
-      titles = c(SCR = "SCR (CHFm)",
-                 MCR = "MCR (CHFm)",
-                 EOF_Total = "Eligible Own Funds (CHFm)",
-                 SCR_Ratio_pct = "SCR coverage (%)",
-                 MCR_Ratio_pct = "MCR coverage (%)"),
+    cap_kpi = new_tile_block(
+      showcase = "number",
+      state = list(
+        aesthetics = list(value = c("SCR", "MCR", "EOF_Total",
+                                    "SCR_Ratio_pct", "MCR_Ratio_pct")),
+        stats = list(value = "sum"),
+        formats = list(measure_labels = c(
+          SCR           = "SCR (CHFm)",
+          MCR           = "MCR (CHFm)",
+          EOF_Total     = "Eligible Own Funds (CHFm)",
+          SCR_Ratio_pct = "SCR coverage (%)",
+          MCR_Ratio_pct = "MCR coverage (%)"
+        ))
+      ),
       block_name = "Capital headline KPIs"
     ),
     cap_wf = new_waterfall_block(

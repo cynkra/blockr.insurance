@@ -104,6 +104,46 @@ Helpers:
 - `new_portfolio_premium_block(dir)`, `new_portfolio_overview_block(dir)`, `new_policy_loader_block(dir)` — blockr roots.
 - `default_portfolio_dir()`, `default_comparison_portfolio_dir()` — paths to the bundled fixtures.
 
+## Reinsurance demo (Swiss Re conversation)
+
+`inst/examples/reinsurance.R` is one board for a group-risk audience
+at a reinsurer. The data is a synthetic assumed book (one row per
+treaty × cedant × peril × region × LOB × year), a 4,000-event
+modelled catalogue fanned across five scenarios, and a per-event
+breakdown table (cedant shares + treaty layer impacts), built
+deterministically by `inst/examples/_reins_data.R`. Not a real CAT
+model — sized to make the live crossfilter + exceedance-curve
+story land.
+
+| Workspace | Shows |
+|---|---|
+| Setup | Three data sources (exposure / events / event_profile), the dm, and the DAG. |
+| Portfolio | Global crossfilter on scenario × peril × region × cedant × LOB; KPIs (premium / exposure / expected loss); drilldowns by peril × region and cedant × LOB. |
+| Accumulation | Exceedance curve rebuilt from the filtered event catalogue (one line per peril, log-shaped). |
+| Stress | Same curve mechanic, but rows are coloured by scenario so all five overlay on one chart. |
+| Event profile | Top-events bar (click a bar to drill into one event); downstream blocks show that event's cedant breakdown and treaty layer impacts. |
+| Tail | Top-25 tail events by cedant × peril. |
+
+```r
+source(system.file("examples", "reinsurance.R", package = "blockr.insurance"))
+```
+
+`ai_ctrl_block()` is enabled board-wide, so filter / arrange /
+mutate / slice blocks expose a sparkle button that opens a chat
+panel — natural-language config for any of them. Requires
+`OPENAI_API_KEY` (or set `options(blockr.chat_function = ...)`).
+
+This is a conversation seed for the May 2026 Swiss Re meeting,
+not the final demo. Real treaty / cedant data plugs into the same
+shape by swapping the three `new_static_block(...)` roots.
+
+Implementation note: the crossfilter routes each shared dim to one
+table only when no FK relationships are declared in the dm (the
+last table listed in `active_dims` wins). The demo puts the
+portfolio dims on `exposure`, and the events-side chains
+(Accumulation / Stress) carry their own `filter_block` for scenario
+selection.
+
 ## License
 
 GPL (>= 3). Underlying data:

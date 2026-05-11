@@ -89,11 +89,16 @@ board <- new_dock_board(
       block_name = "Grand totals over filtered cube"
     ),
     mort_ae = ae_mutate("AE_Amount, AE_Count (one row)"),
-    mort_kpi = new_kpi_block(
-      measures = c("AE_Amount", "AE_Count"),
-      agg_fun  = "sum",
-      titles   = c(AE_Amount = "A/E by Amount",
-                   AE_Count  = "A/E by Count"),
+    mort_kpi = new_tile_block(
+      showcase = "number",
+      state = list(
+        aesthetics = list(value = c("AE_Amount", "AE_Count")),
+        stats = list(value = "sum"),
+        formats = list(measure_labels = c(
+          AE_Amount = "A/E by Amount",
+          AE_Count  = "A/E by Count"
+        ))
+      ),
       block_name = "Mortality A/E"
     ),
 

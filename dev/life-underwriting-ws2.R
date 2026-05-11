@@ -67,12 +67,15 @@ board <- new_dock_board(
       ),
       block_name = "Stub life engine"
     ),
-    kpi        = new_kpi_block(
-      measures = c("premium", "sum_assured"),
-      agg_fun  = "sum",
-      titles   = c(
-        premium     = "Total premium",
-        sum_assured = "Total sum assured"
+    kpi        = new_tile_block(
+      showcase = "number",
+      state = list(
+        aesthetics = list(value = c("premium", "sum_assured")),
+        stats = list(value = "sum"),
+        formats = list(measure_labels = c(
+          premium     = "Total premium",
+          sum_assured = "Total sum assured"
+        ))
       ),
       block_name = "Portfolio KPIs"
     ),

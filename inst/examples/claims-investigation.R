@@ -83,12 +83,18 @@ board <- new_dock_board(
       ),
       block_name = "Avg_Severity = Total_Incurred / Num_Claims"
     ),
-    kpi = new_kpi_block(
-      measures = c("Num_Claims", "Total_Incurred", "Avg_Severity"),
-      agg_fun  = "sum",
-      titles   = c(Num_Claims = "Total claims",
-                   Total_Incurred = "Total incurred",
-                   Avg_Severity = "Avg severity"),
+    kpi = new_tile_block(
+      showcase = "number",
+      state = list(
+        aesthetics = list(value = c("Num_Claims", "Total_Incurred",
+                                    "Avg_Severity")),
+        stats = list(value = "sum"),
+        formats = list(measure_labels = c(
+          Num_Claims     = "Total claims",
+          Total_Incurred = "Total incurred",
+          Avg_Severity   = "Avg severity"
+        ))
+      ),
       block_name = "Claims headline KPIs"
     ),
 
