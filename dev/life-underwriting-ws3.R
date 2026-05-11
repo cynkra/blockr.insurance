@@ -37,7 +37,21 @@ pkgload::load_all("blockr.dm")
 pkgload::load_all("blockr.bi")
 pkgload::load_all("blockr.dag")
 pkgload::load_all("blockr.input")
+pkgload::load_all("blockr.io")
+pkgload::load_all("blockr.session")
+# blockr.extra overrides block_output for data/transform blocks so the
+# html_table_preview option actually fires on initial load. Without this,
+# tile / waterfall outputs stay suspended until you nudge a block.
+pkgload::load_all("blockr.extra")
 pkgload::load_all("blockr.insurance")
+
+# CSV paths shipped with the package — `new_read_block(source = "path")`
+# defaults to these so the workspace runs end-to-end on first launch. The
+# UWR can swap to upload-mode via the read block's cogwheel.
+employees_csv <- system.file("extdata", "employees.csv",
+                             package = "blockr.insurance")
+claims_csv    <- system.file("extdata", "life_claims.csv",
+                             package = "blockr.insurance")
 
 # Valuation date drives the age calculation. Edit via the cogwheel of the
 # `age_calc` block in the Setup tab.
@@ -65,10 +79,39 @@ board <- new_dock_board(
   blocks = c(
 
     # === INPUTS ===
-    coverages_src = new_dataset_block(
-      dataset    = "coverages",
-      package    = "blockr.insurance",
-      block_name = "Coverages (person x coverage)"
+    # Employees census: pre-configured read from the bundled CSV; the UWR
+    # can swap to upload-mode via the cogwheel. The grid block downstream
+    # is the "tweak" layer — same UX pattern as the claims experience.
+    employees_read = new_read_block(
+      path       = employees_csv,
+      source     = "path",
+      block_name = "Employees census (upload)"
+    ),
+    employees_edit = new_grid_block(
+      state = list(key_col = "person_id"),
+      block_name = "Tweak employees"
+    ),
+    # Expand 1,500 employee rows -> 4,500 (person x coverage) by pivoting
+    # the three `sum_*` columns. Downstream pipeline operates on long form.
+    coverage_pivot = new_pivot_longer_block(
+      state = list(
+        cols           = c("sum_Death", "sum_Disability", "sum_CriticalIllness"),
+        names_to       = "coverage_type",
+        values_to      = "sum_at_risk",
+        names_prefix   = "sum_",
+        values_drop_na = FALSE
+      ),
+      block_name = "Expand employees to per-coverage rows"
+    ),
+    # Historical claims experience for this company: same upload+tweak pair.
+    claims_read = new_read_block(
+      path       = claims_csv,
+      source     = "path",
+      block_name = "Claims experience (upload)"
+    ),
+    claims_edit = new_grid_block(
+      state = list(key_col = "claim_id"),
+      block_name = "Tweak claims"
     ),
     uw_factors_src = new_dataset_block(
       dataset    = "uw_factors",
@@ -167,11 +210,17 @@ board <- new_dock_board(
           list(name = "Expected_Claims",
                expr = "Probability_Event * SI_Capitalized"),
           list(name = "Expected_Claims_Raw",
-               expr = "Prob_Event_Raw * SI_Capitalized")
+               expr = "Prob_Event_Raw * SI_Capitalized"),
+          # Per-row Net + Gross so pivot_table can aggregate downstream
+          # without an intermediate summarize+mutate.
+          list(name = "Net_Premium",
+               expr = "Expected_Claims * 1.05"),
+          list(name = "Gross_Premium",
+               expr = "Net_Premium * 1.25")
         ),
         by = list()
       ),
-      block_name = "Expected claims (per person x coverage)"
+      block_name = "Expected claims + premium (per person x coverage)"
     ),
     age_band = new_mutate_block(
       state = list(
@@ -189,43 +238,23 @@ board <- new_dock_board(
       block_name = "Age band"
     ),
 
-    # === DM + CROSSFILTER ===
-    data = new_dm_block(
-      infer_keys = FALSE,
-      block_name = "Claims dm (single table)"
-    ),
+    # === CROSSFILTER ===
+    # Crossfilter takes the post-formula data.frame directly (no dm wrapper).
+    # Wrapping a single-table dm before crossfilter triggers an "unzoomed
+    # <dm>" error from internal dplyr-on-dm calls; passing a data.frame
+    # sidesteps it — crossfilter wraps internally and uses dplyr::filter.
     global_filter = new_crossfilter_block(
-      active_dims = list(claims = c(
+      active_dims = list(.tbl = c(
         "coverage_type", "sex", "smoker", "country", "age_band"
       )),
       block_name = "Global filter (UWR-controlled)"
     ),
 
-    # === KPI: per-coverage totals (filter-reactive) ===
-    kpi_pull = new_dm_pull_block(table = "claims",
-                                 block_name = "Pull claims"),
-    kpi_sum  = sum_by("coverage_type", block_name = "Sum by coverage"),
-    kpi = new_tile_block(
-      showcase = "number",
-      state = list(
-        aesthetics = list(
-          value = c("Expected_Claims", "Expected_Claims_Raw", "Sum_at_Risk"),
-          rows  = "coverage_type"
-        ),
-        stats   = list(value = "sum"),
-        formats = list(measure_labels = c(
-          Expected_Claims     = "Expected claims (full UW)",
-          Expected_Claims_Raw = "Expected claims (raw)",
-          Sum_at_Risk         = "Sum at risk"
-        ))
-      ),
-      block_name = "Coverage KPIs"
-    ),
+    # Per-coverage breakdown removed — waterfall + driver charts already
+    # convey the structure. Just one headline number on Underwrite.
 
     # === DRIVER CHARTS ===
     # 1. Expected claims by age band, split by coverage.
-    age_pull = new_dm_pull_block(table = "claims",
-                                 block_name = "Pull claims"),
     age_sum  = sum_by(c("age_band", "coverage_type")),
     age_chart = new_drilldown_chart_block(
       chart_type = "bar",
@@ -237,8 +266,6 @@ board <- new_dock_board(
     ),
 
     # 2. Expected claims by sex, color by smoker.
-    ssm_pull = new_dm_pull_block(table = "claims",
-                                 block_name = "Pull claims"),
     ssm_sum  = sum_by(c("sex", "smoker")),
     ssm_chart = new_drilldown_chart_block(
       chart_type = "bar",
@@ -250,8 +277,6 @@ board <- new_dock_board(
     ),
 
     # 3. Expected claims by country, split by coverage.
-    cty_pull = new_dm_pull_block(table = "claims",
-                                 block_name = "Pull claims"),
     cty_sum  = sum_by(c("country", "coverage_type")),
     cty_chart = new_drilldown_chart_block(
       chart_type = "bar",
@@ -262,11 +287,7 @@ board <- new_dock_board(
       block_name = "Expected claims by country x coverage"
     ),
 
-    # 4. Top lives by expected claims — concentration analysis. With one
-    # policy, the UWR's "where is the cost?" lens is per-employee, not
-    # per-policy. These are the 15 individuals driving the most claim cost.
-    pol_pull = new_dm_pull_block(table = "claims",
-                                 block_name = "Pull claims"),
+    # 4. Top lives by expected claims — where the cost is concentrated.
     pol_sum  = sum_by("person_id"),
     pol_top  = new_arrange_block(
       state = list(columns = list(
@@ -285,8 +306,6 @@ board <- new_dock_board(
     ),
 
     # 5. UW impact: full-UW vs raw (shows what UW assessment is changing).
-    uw_pull = new_dm_pull_block(table = "claims",
-                                block_name = "Pull claims"),
     uw_sum  = sum_by("coverage_type"),
     uw_chart = new_drilldown_chart_block(
       chart_type = "bar",
@@ -297,23 +316,63 @@ board <- new_dock_board(
     ),
 
     # Per-row preview of the post-formula data.
-    preview_pull = new_dm_pull_block(table = "claims",
-                                     block_name = "Pull claims"),
     preview = new_head_block(n = 12L, block_name = "Per-row preview"),
 
-    # === PRICING: Expected claims -> Gross premium build-up ===
-    # The UWR's bottom line. Surcharges shown here are demo loadings;
-    # edit them via the cogwheel of the `premium_calc` block.
-    #   Safety margin  : 5%  of Expected_Claims  (uncertainty load)
-    #   Expense        : 12% of Net_Premium      (admin / IT / overhead)
-    #   Commission     : 8%  of Net_Premium      (broker / distribution)
-    #   Profit margin  : 5%  of Net_Premium      (target return)
-    #
-    # Cumulative columns (Net_Premium, After_Expense, After_Commission,
-    # Gross_Premium) feed the waterfall block, which renders the build-up
-    # as floating bars from Expected_Claims to Gross_Premium.
-    pricing_pull = new_dm_pull_block(table = "claims",
-                                     block_name = "Pull claims"),
+    # === INPUTS: overview chart — insured value by country x coverage ===
+    # Branched off coverage_pivot so it reacts to the UWR's grid edits. Sums
+    # `sum_at_risk` and counts unique employees per (country, coverage_type).
+    employees_sum = new_summarize_block(
+      state = list(
+        summaries = list(
+          list(type = "expr", name = "Sum_at_Risk",
+               expr = "sum(sum_at_risk, na.rm = TRUE)"),
+          list(type = "expr", name = "Headcount",
+               expr = "dplyr::n_distinct(person_id)")
+        ),
+        by = c("country", "coverage_type")
+      ),
+      block_name = "Insured value by country x coverage"
+    ),
+    employees_chart = new_drilldown_chart_block(
+      chart_type = "bar",
+      group_by = "country",
+      color_by = "coverage_type",
+      metric   = "Sum_at_Risk",
+      agg_fn   = "sum",
+      block_name = "Insured value by country x coverage"
+    ),
+
+    # === EXPERIENCE: historical claims summary + chart ===
+    # The UWR uses experience to sanity-check the forward-looking Expected
+    # Claims. Bar chart: year x coverage_type x claim amount totals.
+    claims_sum = new_summarize_block(
+      state = list(
+        summaries = list(
+          list(type = "expr", name = "Total_Claims",
+               expr = "sum(claim_amount, na.rm = TRUE)"),
+          list(type = "expr", name = "Num_Claims",
+               expr = "dplyr::n()")
+        ),
+        by = c("year", "coverage_type")
+      ),
+      block_name = "Claims by year x coverage"
+    ),
+    claims_chart = new_drilldown_chart_block(
+      chart_type = "bar",
+      group_by = "year",
+      color_by = "coverage_type",
+      metric   = "Total_Claims",
+      agg_fn   = "sum",
+      block_name = "Historical claims by year x coverage"
+    ),
+
+    # === WATERFALL: Expected claims -> Gross premium build-up (portfolio) ===
+    # Surcharges below are demo loadings, edit via cogwheel of premium_calc.
+    #   Safety margin  : 5%  of Expected_Claims
+    #   Expense        : 12% of Net_Premium  (admin / IT / overhead)
+    #   Commission     : 8%  of Net_Premium  (broker / distribution)
+    #   Profit margin  : 5%  of Net_Premium  (target return)
+    # Portfolio-level — per-coverage Net + Gross live in the kpi tile.
     pricing_sum = new_summarize_block(
       state = list(
         summaries = list(
@@ -340,25 +399,27 @@ board <- new_dock_board(
       ),
       block_name = "Premium build-up (surcharges)"
     ),
-    premium_kpi = new_tile_block(
+    premium_waterfall = new_waterfall_block(
+      measures = c("Expected_Claims", "Net_Premium",
+                   "After_Expense", "After_Commission", "Gross_Premium"),
+      block_name = "Premium build-up — Expected claims to Gross premium"
+    ),
+    # Headline tiles — three numbers: Expected claims, Net premium, Gross
+    # premium. Fed by premium_calc (single-row portfolio total).
+    kpi_totals = new_tile_block(
       showcase = "number",
       state = list(
         aesthetics = list(
           value = c("Expected_Claims", "Net_Premium", "Gross_Premium")
         ),
-        stats   = list(value = "sum"),
+        stats   = list(value = "first"),
         formats = list(measure_labels = c(
-          Expected_Claims = "Expected claims (full UW)",
-          Net_Premium     = "Net premium (+ safety margin)",
-          Gross_Premium   = "Gross premium (quoted price)"
+          Expected_Claims = "Expected claims (EUR)",
+          Net_Premium     = "Net premium (EUR)",
+          Gross_Premium   = "Gross premium (EUR)"
         ))
       ),
-      block_name = "Premium headline"
-    ),
-    premium_waterfall = new_waterfall_block(
-      measures = c("Expected_Claims", "Net_Premium",
-                   "After_Expense", "After_Commission", "Gross_Premium"),
-      block_name = "Premium build-up — Expected claims to Gross premium"
+      block_name = "Portfolio totals"
     )
   ),
 
@@ -366,11 +427,24 @@ board <- new_dock_board(
     # UWR edits uw_factors via the grid block.
     new_link("uw_factors_src", "uwr_edit", "data"),
 
-    # coverages x edited uw_factors -> aged -> joins -> formula -> age_band
-    new_link("coverages_src", "j_uw",        "x"),
-    new_link("uwr_edit",      "j_uw",        "y"),
-    new_link("j_uw",          "age_calc",    "data"),
-    new_link("age_calc",      "j_incidence", "x"),
+    # Employees: read CSV -> tweak grid -> pivot to per-coverage rows.
+    new_link("employees_read", "employees_edit",  "data"),
+    new_link("employees_edit", "coverage_pivot",  "data"),
+
+    # Overview chart on the Inputs tab — tee off coverage_pivot.
+    new_link("coverage_pivot", "employees_sum",   "data"),
+    new_link("employees_sum",  "employees_chart", "data"),
+
+    # Claims experience: read CSV -> tweak grid -> summarize -> chart.
+    new_link("claims_read", "claims_edit", "data"),
+    new_link("claims_edit", "claims_sum",  "data"),
+    new_link("claims_sum",  "claims_chart","data"),
+
+    # pivoted (4,500) x edited uw_factors -> aged -> joins -> formula -> age_band
+    new_link("coverage_pivot", "j_uw",       "x"),
+    new_link("uwr_edit",       "j_uw",       "y"),
+    new_link("j_uw",       "age_calc",    "data"),
+    new_link("age_calc",   "j_incidence", "x"),
     new_link("incidence_src", "j_incidence", "y"),
     new_link("j_incidence",   "j_country",   "x"),
     new_link("country_src",   "j_country",   "y"),
@@ -379,81 +453,74 @@ board <- new_dock_board(
     new_link("j_annuity",     "formula",     "data"),
     new_link("formula",       "age_band",    "data"),
 
-    # age_band -> dm -> crossfilter
-    new_link("age_band",      "data",          "claims"),
-    new_link("data",          "global_filter", "data"),
+    # age_band feeds crossfilter directly as a data.frame.
+    new_link("age_band", "global_filter", "data"),
 
-    # Chart paths (each starts with its own pull from the filtered dm).
-    new_link("global_filter", "kpi_pull",      "data"),
-    new_link("kpi_pull",      "kpi_sum",       "data"),
-    new_link("kpi_sum",       "kpi",           "data"),
+    # Chart paths: filtered data.frame -> summarize -> chart.
 
-    new_link("global_filter", "age_pull",      "data"),
-    new_link("age_pull",      "age_sum",       "data"),
-    new_link("age_sum",       "age_chart",     "data"),
+    new_link("global_filter", "age_sum",   "data"),
+    new_link("age_sum",       "age_chart", "data"),
 
-    new_link("global_filter", "ssm_pull",      "data"),
-    new_link("ssm_pull",      "ssm_sum",       "data"),
-    new_link("ssm_sum",       "ssm_chart",     "data"),
+    new_link("global_filter", "ssm_sum",   "data"),
+    new_link("ssm_sum",       "ssm_chart", "data"),
 
-    new_link("global_filter", "cty_pull",      "data"),
-    new_link("cty_pull",      "cty_sum",       "data"),
-    new_link("cty_sum",       "cty_chart",     "data"),
+    new_link("global_filter", "cty_sum",   "data"),
+    new_link("cty_sum",       "cty_chart", "data"),
 
-    new_link("global_filter", "pol_pull",      "data"),
-    new_link("pol_pull",      "pol_sum",       "data"),
-    new_link("pol_sum",       "pol_top",       "data"),
-    new_link("pol_top",       "pol_head",      "data"),
-    new_link("pol_head",      "pol_chart",     "data"),
+    new_link("global_filter", "pol_sum",   "data"),
+    new_link("pol_sum",       "pol_top",   "data"),
+    new_link("pol_top",       "pol_head",  "data"),
+    new_link("pol_head",      "pol_chart", "data"),
 
-    new_link("global_filter", "uw_pull",       "data"),
-    new_link("uw_pull",       "uw_sum",        "data"),
-    new_link("uw_sum",        "uw_chart",      "data"),
+    new_link("global_filter", "uw_sum",    "data"),
+    new_link("uw_sum",        "uw_chart",  "data"),
 
-    new_link("global_filter", "preview_pull",  "data"),
-    new_link("preview_pull",  "preview",       "data"),
+    new_link("global_filter", "preview",   "data"),
 
-    # Pricing path: filtered claims -> total -> premium build-up -> KPI + waterfall
-    new_link("global_filter", "pricing_pull",      "data"),
-    new_link("pricing_pull",  "pricing_sum",       "data"),
+    # Pricing path: filtered df -> portfolio total -> build-up -> waterfall + headline.
+    new_link("global_filter", "pricing_sum",       "data"),
     new_link("pricing_sum",   "premium_calc",      "data"),
-    new_link("premium_calc",  "premium_kpi",       "data"),
-    new_link("premium_calc",  "premium_waterfall", "data")
+    new_link("premium_calc",  "premium_waterfall", "data"),
+    new_link("premium_calc",  "kpi_totals",        "data")
   ),
 
   extensions = list(
     blockr.dag::new_dag_extension()
   ),
 
-  # Six tabs:
-  #   Underwrite  — UWR's worksheet + global filter + KPI per coverage.
-  #   Pricing     — premium build-up waterfall + headline KPI.
-  #   Drivers     — drilldown charts to inspect what makes the price.
-  #   Top         — concentration: top lives + UW-impact comparison.
-  #   Pipeline    — the joins, formula chain, age band, dm.
-  #   Setup       — data sources, age calc, DAG.
+  # Final-app tabs:
+  #   Inputs      — employees upload-and-tweak.
+  #   Claims      — claims experience upload-and-tweak + historical chart.
+  #   Underwrite  — the main page (the whole price story in one place):
+  #                 worksheet, filter, portfolio totals tile, premium build-up
+  #                 waterfall (the star), per-coverage premium table, driver
+  #                 charts (age / sex-smoker / country).
+  #   Analysis    — top lives, UW impact, per-row preview (use-once deep dives).
+  #
+  # Actuarial    — the pipeline guts. Keep visible during dev; in production
+  #                drop this `dock_view()` and set blockr.dock_is_locked=TRUE.
   layout = dock_layouts(
-    Underwrite = dock_view(
-      "uwr_edit", "global_filter", "kpi",
+    Inputs = dock_view(
+      "employees_read", "employees_edit", "employees_chart",
       active = TRUE
     ),
-    Pricing = dock_view(
-      "global_filter", "premium_kpi", "premium_waterfall"
+    Claims = dock_view(
+      "claims_read", "claims_edit", "claims_chart"
     ),
-    Drivers = dock_view(
-      "global_filter",
-      "age_chart", "ssm_chart", "cty_chart"
+    Underwrite = dock_view(
+      "uwr_edit", "global_filter",
+      "kpi_totals", "premium_waterfall"
     ),
-    Top = dock_view(
+    Analysis = dock_view(
       "global_filter",
+      "age_chart", "ssm_chart", "cty_chart",
       "pol_chart", "uw_chart", "preview"
     ),
-    Pipeline = dock_view(
+    Actuarial = dock_view(
+      "coverage_pivot",
       "j_uw", "j_incidence", "j_country", "j_annuity",
-      "formula", "age_band", "data", "premium_calc"
-    ),
-    Setup = dock_view(
-      "coverages_src", "uw_factors_src", "incidence_src",
+      "formula", "age_band", "premium_calc",
+      "uw_factors_src", "incidence_src",
       "country_src", "annuity_src",
       "age_calc", "dag_extension"
     )
@@ -461,4 +528,8 @@ board <- new_dock_board(
 )
 
 
-shiny::runApp(serve(board))
+shiny::runApp(
+  serve(board, plugins = custom_plugins(manage_project()))
+  # port = 3838,
+  # host = "127.0.0.1"
+)

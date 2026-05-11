@@ -248,7 +248,7 @@
 #'
 #' @source Society of Actuaries, 2015 Valuation Basic Table.
 #'   <https://mort.soa.org> (table IDs 3224/3225/3236/3237).
-#' @seealso [incidence_by_coverage] (derived from this), [coverages],
+#' @seealso [incidence_by_coverage] (derived from this), [employees],
 #'   [uw_factors], [country_adjustment], [annuity_2pct].
 #' @keywords datasets
 "vbt_2015"
@@ -267,7 +267,7 @@
 #'   \item{adjustment}{numeric; multiplier around 1.}
 #' }
 #'
-#' @seealso [coverages], [uw_factors], [incidence_by_coverage],
+#' @seealso [employees], [uw_factors], [incidence_by_coverage],
 #'   [annuity_2pct].
 #' @keywords datasets
 "country_adjustment"
@@ -288,7 +288,7 @@
 #'   \item{capitalization_factor}{numeric; declining with age.}
 #' }
 #'
-#' @seealso [coverages], [uw_factors], [incidence_by_coverage],
+#' @seealso [employees], [uw_factors], [incidence_by_coverage],
 #'   [country_adjustment].
 #' @keywords datasets
 "annuity_2pct"
@@ -312,7 +312,7 @@
 #'   \item{incidence_rate}{numeric; one-year incidence rate.}
 #' }
 #'
-#' @seealso [vbt_2015], [coverages], [uw_factors].
+#' @seealso [vbt_2015], [employees], [uw_factors].
 #' @keywords datasets
 "incidence_by_coverage"
 
@@ -339,47 +339,68 @@
 #'   \item{uw_hobby}{numeric; hobby-factor multiplier. Default `1`.}
 #' }
 #'
-#' @seealso [coverages], [incidence_by_coverage], [country_adjustment],
+#' @seealso [employees], [incidence_by_coverage], [country_adjustment],
 #'   [annuity_2pct].
 #' @keywords datasets
 "uw_factors"
 
 
-#' Life-insurance coverages — main pipeline input
+#' Employees census — wide-format main pipeline input
 #'
-#' Per-(life, coverage) input table for the life underwriting demo
-#' (`dev/life-underwriting-ws3.R`). One row per insured life **per
-#' coverage**, with demographic columns (`dob`, `sex`, `smoker`, `country`)
-#' replicated across that life's coverage rows for join simplicity. All
-#' lives belong to the same single policy being priced (no `policy_id`
-#' field — URW prices one submission at a time, with the census upload
-#' containing every employee covered by that submission).
-#'
-#' Coverage-specific values:
-#' - `sum_at_risk` differs by coverage (Death is the headline benefit;
-#'   Disability is roughly 80% of Death; CriticalIllness is a smaller
-#'   lump sum, ~30% of Death).
-#' - `additive_rate` is the per-coverage specific-risk load Antoine
-#'   describes (hazardous hobby, medical history). Defaults to `0`; not
-#'   edited via the UWR grid in this demo (the grid edits [uw_factors]
-#'   instead).
+#' One row per insured employee for the single group-life policy being
+#' priced (the workspace prices one submission at a time; this is the
+#' census upload). Three `sum_*` columns carry the sum at risk for each
+#' coverage so the table stays at the human-readable 750-row "list of
+#' employees" grain. The workspace pivots these to long form (2,250 rows)
+#' immediately after the UWR-editable grid block.
 #'
 #' Synthetic; built by `data-raw/build_life_demo.R` with `set.seed(42)`.
+#' CSV export available at
+#' `system.file("extdata", "employees.csv", package = "blockr.insurance")`.
 #'
-#' @format A tibble with 4,500 rows (1,500 lives x 3 coverages) and 8
-#'   columns:
+#' @format A tibble with 750 rows and 9 columns:
 #' \describe{
-#'   \item{person_id}{character; `P00001`..`P01500`.}
+#'   \item{person_id}{character; `P00001`..`P00750`.}
 #'   \item{dob}{Date; ages roughly 18–95 at the 2026-05-11 valuation date.}
-#'   \item{sex}{factor; `F` / `M`.}
-#'   \item{smoker}{factor; `N` / `Y`.}
+#'   \item{sex}{factor; `F` / `M`, ~46/54.}
+#'   \item{smoker}{factor; `N` / `Y`, ~83/17.}
 #'   \item{country}{factor; one of `DE`, `ES`, `FR`, `GB`, `IT`.}
-#'   \item{coverage_type}{factor; `Death`, `Disability`, `CriticalIllness`.}
-#'   \item{sum_at_risk}{numeric; insured sum per coverage.}
-#'   \item{additive_rate}{numeric; UWR-set extra incidence load. Default `0`.}
+#'   \item{additive_rate}{numeric; UWR-set per-employee specific-risk
+#'     load (Antoine: "hazardous hobby, medical history"). Default `0`.}
+#'   \item{sum_Death}{numeric; sum at risk for Death cover.}
+#'   \item{sum_Disability}{numeric; sum at risk for Disability cover
+#'     (~80% of Death).}
+#'   \item{sum_CriticalIllness}{numeric; sum at risk for Critical
+#'     Illness cover (~30% of Death).}
 #' }
 #'
 #' @seealso [uw_factors], [incidence_by_coverage], [country_adjustment],
-#'   [annuity_2pct].
+#'   [annuity_2pct], [life_claims].
 #' @keywords datasets
-"coverages"
+"employees"
+
+
+#' Life-insurance experience — historical claims for the company being priced
+#'
+#' Synthetic experience table the UWR uploads alongside [employees]: ~80
+#' historical claim records over five years for the same company, used as a
+#' sanity check against the prospective Expected_Claims forecast (an A/E
+#' or "actual-vs-expected" view).
+#'
+#' Built by `data-raw/build_life_demo.R`. CSV export also available at
+#' `system.file("extdata", "life_claims.csv", package = "blockr.insurance")`
+#' so the workspace's `new_read_block(source = "path")` can default to a
+#' real file.
+#'
+#' @format A tibble with 80 rows and 5 columns:
+#' \describe{
+#'   \item{claim_id}{character; `CL0001`..`CL0080`.}
+#'   \item{year}{integer; 2021..2025.}
+#'   \item{coverage_type}{factor; `Death`, `Disability`, `CriticalIllness`.}
+#'   \item{person_id}{character; references a row in [employees].}
+#'   \item{claim_amount}{numeric; rounded to 1,000.}
+#' }
+#'
+#' @seealso [employees], [uw_factors].
+#' @keywords datasets
+"life_claims"
