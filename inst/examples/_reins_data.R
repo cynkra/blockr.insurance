@@ -178,10 +178,30 @@ make_reins_data <- function(seed = 42L) {
   event_profile <- rbind(ed_cedants, ed_treaties)
   rownames(event_profile) <- NULL
 
+  # === Cedants metadata ===
+  # Small dimension table. Acts as the dm parent so the Cedant-profile
+  # drill can semi-filter the whole dm by cedant via FK cascade.
+  domiciles <- c(
+    "Germany", "Switzerland", "United Kingdom", "France", "Italy",
+    "Spain", "United States", "Japan", "Bermuda", "Ireland"
+  )
+  segments <- c(
+    "Large composite", "Regional", "Specialty", "Mutual", "Lloyd's syndicate"
+  )
+  cedants_meta <- data.frame(
+    cedant = cedants,
+    domicile = sample(domiciles, length(cedants), replace = TRUE),
+    segment = sample(segments, length(cedants), replace = TRUE,
+      prob = c(0.30, 0.25, 0.20, 0.15, 0.10)),
+    founded = sample(1850:1995, length(cedants), replace = TRUE),
+    stringsAsFactors = FALSE
+  )
+
   list(
     treaty_exposure = treaty_exposure,
     treaty_events = events,
-    event_profile = event_profile
+    event_profile = event_profile,
+    cedants = cedants_meta
   )
 }
 
@@ -189,3 +209,4 @@ reins_data <- make_reins_data()
 treaty_exposure <- reins_data$treaty_exposure
 treaty_events <- reins_data$treaty_events
 event_profile <- reins_data$event_profile
+cedants <- reins_data$cedants

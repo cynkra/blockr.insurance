@@ -117,12 +117,9 @@ story land.
 
 | Workspace | Shows |
 |---|---|
-| Setup | Three data sources (exposure / events / event_profile), the dm, and the DAG. |
-| Portfolio | Global crossfilter on scenario × peril × region × cedant × LOB; KPIs (premium / exposure / expected loss); drilldowns by peril × region and cedant × LOB. |
-| Accumulation | Exceedance curve rebuilt from the filtered event catalogue (one line per peril, log-shaped). |
-| Stress | Same curve mechanic, but rows are coloured by scenario so all five overlay on one chart. |
-| Event profile | Top-events bar (click a bar to drill into one event); downstream blocks show that event's cedant breakdown and treaty layer impacts. |
-| Tail | Top-25 tail events by cedant × peril. |
+| Portfolio | Global crossfilter on scenario × peril × region × cedant × LOB (bars sized by sum of expected loss); KPIs (premium / exposure / expected loss); drilldowns by peril × region and cedant × LOB; an "Active cedant" tile reflects whichever cedant was last picked. |
+| PML | Exceedance curve rebuilt from the modelled event catalogue, one line per scenario (Baseline / RCP 4.5 / RCP 8.5 / Pandemic / Cyber Tail). Click a legend entry to hide a scenario and isolate any comparison. |
+| Cedant profile | Pick a cedant from the bar chart; downstream blocks light up with that cedant's KPIs, peril mix, treaty mix, loss over time, plus the "Active cedant" tile. Uses the `latest_block + dm_semi_filter_block` pattern from the CEDX clinical explorer in `blockr.sandbox` — semi-filter cascades through the dm via declared PK / FK so every cedant-linked table restricts to the picked cedant. Same scaffolding extends to event, peril, region, etc. — add one more semi-filter and a stack of stock blocks per drill. |
 
 ```r
 source(system.file("examples", "reinsurance.R", package = "blockr.insurance"))
