@@ -210,6 +210,36 @@
 "property_params"
 
 
+#' Property pricing parameters — individual tables
+#'
+#' The four tables of [property_params] also exported as standalone datasets
+#' so they can be loaded into the property workbench via
+#' [blockr.core::new_dataset_block()]. Dataset blocks store only the dataset
+#' name + package, so saved workflows round-trip cleanly through
+#' save / load (unlike `new_static_block` which embeds the data in the
+#' workflow JSON and loses the data-frame shape on deserialization).
+#'
+#' Built by `data-raw/build_property.R`.
+#'
+#' @format Data frames. See [property_params] for shapes.
+#' @seealso [property_params], [new_price_block()].
+#' @name property_param_tables
+#' @keywords datasets
+NULL
+
+#' @rdname property_param_tables
+"property_param_country_factor"
+
+#' @rdname property_param_tables
+"property_param_base_rate"
+
+#' @rdname property_param_tables
+"property_param_cat_factor"
+
+#' @rdname property_param_tables
+"property_param_expenses"
+
+
 #' Property pricing parameters — alternative scenario for the explorer demo
 #'
 #' Same shape as [property_params], with the Italian `base_rate` bumped by

@@ -62,24 +62,32 @@ board <- new_dock_board(
     ),
 
     # === SHARED PARAM DEFAULTS — both runs seed their grids from these ===
-    # property_params ships as a list of 4 tables. Static blocks hold the
-    # defaults; Base and Challenger grids edit base_rate independently.
-    # Cleaner shape (one dm-aware CRUD block) is parked in
+    # The four sub-tables of property_params are exposed as standalone
+    # datasets in blockr.insurance so we can load each with a dataset block.
+    # Dataset blocks store the dataset NAME, not the data, so saved
+    # workflows round-trip cleanly through JSON save/load. Static blocks
+    # don't (jsonlite re-parses the embedded data as a list-of-records, not
+    # a data frame, and downstream blocks then crash).
+    # Cleaner long-term shape (one dm-aware CRUD block) is parked in
     # blockr.design/open/dm-crud-input/1-motivation.md.
-    country_factor_src = new_static_block(
-      data       = blockr.insurance::property_params$country_factor,
+    country_factor_src = new_dataset_block(
+      dataset    = "property_param_country_factor",
+      package    = "blockr.insurance",
       block_name = "country_factor"
     ),
-    base_rate_src = new_static_block(
-      data       = blockr.insurance::property_params$base_rate,
+    base_rate_src = new_dataset_block(
+      dataset    = "property_param_base_rate",
+      package    = "blockr.insurance",
       block_name = "base_rate"
     ),
-    expenses_src = new_static_block(
-      data       = blockr.insurance::property_params$expenses,
+    expenses_src = new_dataset_block(
+      dataset    = "property_param_expenses",
+      package    = "blockr.insurance",
       block_name = "expenses"
     ),
-    cat_factor_src = new_static_block(
-      data       = blockr.insurance::property_params$cat_factor,
+    cat_factor_src = new_dataset_block(
+      dataset    = "property_param_cat_factor",
+      package    = "blockr.insurance",
       block_name = "cat_factor"
     ),
 

@@ -12,6 +12,10 @@
 #   data/property_claims.rda
 #   data/property_params.rda
 #   data/property_params_comparison.rda
+#   data/property_param_country_factor.rda
+#   data/property_param_base_rate.rda
+#   data/property_param_cat_factor.rda
+#   data/property_param_expenses.rda
 
 set.seed(1)
 
@@ -87,6 +91,23 @@ save(property_params,
 save(property_params_comparison,
      file = "data/property_params_comparison.rda",
      compress = "xz")
+
+# Individual param tables — exposed as standalone datasets so the property
+# workbench can load each via new_dataset_block() rather than new_static_block().
+# Dataset blocks store the dataset name, not the data, so they round-trip
+# through save/load cleanly.
+property_param_country_factor <- property_params$country_factor
+property_param_base_rate      <- property_params$base_rate
+property_param_cat_factor     <- property_params$cat_factor
+property_param_expenses       <- property_params$expenses
+save(property_param_country_factor,
+     file = "data/property_param_country_factor.rda", compress = "xz")
+save(property_param_base_rate,
+     file = "data/property_param_base_rate.rda",      compress = "xz")
+save(property_param_cat_factor,
+     file = "data/property_param_cat_factor.rda",     compress = "xz")
+save(property_param_expenses,
+     file = "data/property_param_expenses.rda",       compress = "xz")
 
 cat("Wrote ", nrow(property_locations),
     " rows to data/property_locations.rda\n", sep = "")
