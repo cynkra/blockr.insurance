@@ -46,7 +46,20 @@ new_portfolio_inputs_block <- function(dir = default_portfolio_dir(),
             bquote(
               local({
                 .lst <- blockr.insurance::read_portfolio_inputs(.(d))
-                dm::as_dm(.lst)
+                # Build a `policies` parent table so upstream filters on
+                # policy_id cascade through to locations + claims via FKs.
+                .pids <- unique(c(.lst$locations$policy_id,
+                                  .lst$claims$policy_id))
+                .pids <- .pids[!is.na(.pids)]
+                .policies <- data.frame(
+                  policy_id = .pids,
+                  stringsAsFactors = FALSE
+                )
+                .dm <- dm::as_dm(c(list(policies = .policies), .lst))
+                .dm <- dm::dm_add_pk(.dm, policies, policy_id)
+                .dm <- dm::dm_add_fk(.dm, locations, policy_id, policies)
+                .dm <- dm::dm_add_fk(.dm, claims,    policy_id, policies)
+                .dm
               }),
               list(d = r_dir())
             )

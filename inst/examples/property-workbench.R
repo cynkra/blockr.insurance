@@ -34,13 +34,31 @@ pkgload::load_all("blockr.insurance")
 
 portfolio_dir <- blockr.insurance::default_portfolio_dir()
 
+# Single source of truth for waterfall measures — used by Price build-up,
+# Policy waterfall, the Compare block, and the Diff waterfall so every
+# price-flow visualisation lines up on the same axis.
+waterfall_measures <- c("base_premium", "exposure_premium",
+                        "experience_premium", "risk_premium", "model_price")
+
 board <- new_dock_board(
   blocks = c(
 
     # === SETUP — portfolio inputs shared by both runs ===
     portfolio_inputs = new_portfolio_inputs_block(
       dir = portfolio_dir,
-      block_name = "Portfolio inputs (locations + claims, with policy_id)"
+      block_name = "Inputs"
+    ),
+
+    # Upstream scope picker. Filters the input dm on policies.policy_id,
+    # cascading to locations + claims via FK. Default state is multi-mode
+    # with empty values → passthrough (whole book). Switch to single-mode
+    # via the gear popover to pick one policy.
+    policy_picker = new_bi_filter_block(
+      state = list(columns = list(
+        list(name = "policy_id", table = "policies",
+             mode = "multi", values = character())
+      )),
+      block_name = "Scope"
     ),
 
     # === SHARED PARAM DEFAULTS — both runs seed their grids from these ===
@@ -50,73 +68,58 @@ board <- new_dock_board(
     # blockr.design/open/dm-crud-input/1-motivation.md.
     country_factor_src = new_static_block(
       data       = blockr.insurance::property_params$country_factor,
-      block_name = "country_factor (default)"
+      block_name = "country_factor"
     ),
     base_rate_src = new_static_block(
       data       = blockr.insurance::property_params$base_rate,
-      block_name = "base_rate (default)"
+      block_name = "base_rate"
     ),
     expenses_src = new_static_block(
       data       = blockr.insurance::property_params$expenses,
-      block_name = "expenses (default)"
+      block_name = "expenses"
     ),
     cat_factor_src = new_static_block(
       data       = blockr.insurance::property_params$cat_factor,
-      block_name = "cat_factor (default, used by v2)"
+      block_name = "cat_factor"
     ),
 
     # === BASE RUN — engine + params + price + premium ===
     base_grid = new_grid_block(
       state      = list(key_col = "country"),
-      block_name = "Base — base_rate (editable)"
+      block_name = "Base rates"
     ),
     base_params = new_dm_block(
       infer_keys = FALSE,
-      block_name = "Base — params dm"
+      block_name = "Base params"
     ),
     base_price = new_price_block(
       engine     = "engine_property",
       package    = "blockr.insurance",
-      block_name = "Base — price (engine selector)"
+      block_name = "Base engine"
     ),
     base_premium = new_dm_pull_block(
       table = "premium",
-      block_name = "Base — premium table"
+      block_name = "Base premium"
     ),
 
-    # === ENGINE-SELECTION PREVIEW — policy picker + waterfall on Base ===
-    # Lets the user see the price build-up update live as they tweak rates or
-    # swap engines, without leaving the config tab. The policy picker is a
-    # single-dim crossfilter (chip per policy_id) for fast drill-in.
-    preview_xfilter = new_crossfilter_block(
-      active_dims = list(.tbl = "policy_id"),
-      measure     = ".tbl.model_price",
-      agg_func    = "sum",
-      block_name  = "Policy picker"
-    ),
-    preview_waterfall = new_waterfall_block(
-      measures = c("base_premium", "exposure_premium",
-                   "experience_premium", "risk_premium", "model_price"),
-      block_name = "Price build-up (Base)"
-    ),
 
     # === CHALLENGER RUN — symmetric, defaults to v2 engine ===
     chal_grid = new_grid_block(
       state      = list(key_col = "country"),
-      block_name = "Challenger — base_rate (editable)"
+      block_name = "Challenger rates"
     ),
     chal_params = new_dm_block(
       infer_keys = FALSE,
-      block_name = "Challenger — params dm"
+      block_name = "Challenger params"
     ),
     chal_price = new_price_block(
       engine     = "engine_property_v2",
       package    = "blockr.insurance",
-      block_name = "Challenger — price (engine selector)"
+      block_name = "Challenger engine"
     ),
     chal_premium = new_dm_pull_block(
       table = "premium",
-      block_name = "Challenger — premium table"
+      block_name = "Challenger premium"
     ),
 
     # === PORTFOLIO WORKSPACE — KPI + drilldowns off the Base run ===
@@ -130,21 +133,21 @@ board <- new_dock_board(
           exposure_premium = "Total Exposure Premium (Base)"
         ))
       ),
-      block_name = "Portfolio KPIs (Base)"
+      block_name = "KPIs"
     ),
     portfolio_drill_country = new_drilldown_chart_block(
       chart_type = "bar",
       group_by   = "country",
       metric     = "model_price",
       agg_fn     = "sum",
-      block_name = "Model price by country (Base)"
+      block_name = "By country"
     ),
     portfolio_drill_peril = new_drilldown_chart_block(
       chart_type = "bar",
       group_by   = "peril",
       metric     = "model_price",
       agg_fn     = "sum",
-      block_name = "Model price by peril (Base)"
+      block_name = "By peril"
     ),
 
     # === ANALYSIS CROSSFILTER — single filter source for the Analysis tab ===
@@ -154,7 +157,7 @@ board <- new_dock_board(
       active_dims = list(.tbl = c("country", "peril", "policy_id")),
       measure     = ".tbl.model_price",
       agg_func    = "sum",
-      block_name  = "Analysis filter (country / peril / policy)"
+      block_name  = "Filter"
     ),
 
     # === POLICY VIEW — scatter (visual) + waterfall (price build-up) ===
@@ -164,12 +167,15 @@ board <- new_dock_board(
       x_col      = "tiv",
       y_col      = "model_price",
       series_by  = "policy_id",
-      block_name = "Policy scatter — Base"
+      block_name = "Policy scatter"
     ),
+    # Single waterfall reused on Engine selection (configuration feedback)
+    # and Analysis (chip-filtered drill). Wired through `analysis_xfilter`
+    # so it responds to country/peril/policy_id chips when they're set;
+    # otherwise it just reflects the upstream Scope.
     policy_waterfall = new_waterfall_block(
-      measures = c("base_premium", "exposure_premium",
-                   "experience_premium", "risk_premium", "model_price"),
-      block_name = "Policy waterfall — Base"
+      measures = waterfall_measures,
+      block_name = "Price build-up"
     ),
 
     # === COMPARE — Challenger vs Base, portfolio grain ===
@@ -177,48 +183,49 @@ board <- new_dock_board(
     # (positive when Challenger increases the price — natural narrative).
     compare_portfolio = new_compare_block(
       key_cols     = c("policy_id", "location_id", "country", "peril"),
-      measure_cols = c("base_premium", "exposure_premium",
-                       "risk_premium", "model_price"),
+      measure_cols = waterfall_measures,
       metric       = "diff",
-      block_name   = "Compare Challenger vs Base (portfolio)"
+      block_name   = "Compare"
     ),
     compare_portfolio_xfilter = new_crossfilter_block(
       active_dims = list(.tbl = c("country", "peril", "policy_id")),
       measure     = ".tbl.model_price",
       agg_func    = "sum",
-      block_name  = "Diff filter (country / peril / policy)"
+      block_name  = "Diff filter"
     ),
     compare_portfolio_waterfall = new_waterfall_block(
       measures = c("base_premium", "exposure_premium",
                    "risk_premium", "model_price"),
-      block_name = "Diff waterfall (Challenger - Base)"
+      block_name = "Diff waterfall"
     )
   ),
 
   links = links(
     from = c(
+      # Upstream scope picker — filters portfolio_inputs on policies.policy_id,
+      # cascades to locations + claims via FK. Both engines read the scoped dm.
+      "portfolio_inputs",
       # Shared defaults seed each side's grid.
       "base_rate_src", "base_rate_src",
       # Base run: params dm = country_factor + edited base_rate + expenses +
-      # cat_factor; then price (with portfolio inputs) → premium.
+      # cat_factor; then price (with scoped inputs) → premium.
       "country_factor_src", "base_grid", "expenses_src", "cat_factor_src",
-      "portfolio_inputs", "base_params",
+      "policy_picker", "base_params",
       "base_price",
       # Challenger run: same shape, mirrored.
       "country_factor_src", "chal_grid", "expenses_src", "cat_factor_src",
-      "portfolio_inputs", "chal_params",
+      "policy_picker", "chal_params",
       "chal_price",
       # Analysis tab: crossfilter sits between Base premium and every chart.
       "base_premium",
       "analysis_xfilter", "analysis_xfilter", "analysis_xfilter",
       "analysis_xfilter", "analysis_xfilter",
-      # Engine-selection preview: base_premium → small crossfilter → waterfall.
-      "base_premium", "preview_xfilter",
       # Compare: x = Challenger, y = Base → diff → crossfilter → waterfall.
       "chal_premium", "base_premium",
       "compare_portfolio", "compare_portfolio_xfilter"
     ),
     to = c(
+      "policy_picker",
       "base_grid", "chal_grid",
       "base_params", "base_params", "base_params", "base_params",
       "base_price",  "base_price",
@@ -229,11 +236,11 @@ board <- new_dock_board(
       "analysis_xfilter",
       "portfolio_kpi", "portfolio_drill_country", "portfolio_drill_peril",
       "policy_scatter", "policy_waterfall",
-      "preview_xfilter", "preview_waterfall",
       "compare_portfolio", "compare_portfolio",
       "compare_portfolio_xfilter", "compare_portfolio_waterfall"
     ),
     input = c(
+      "data",
       "data", "data",
       "country_factor", "base_rate", "expenses", "cat_factor",
       "inputs",  "params",
@@ -243,7 +250,6 @@ board <- new_dock_board(
       "data",
       "data",
       "data", "data", "data", "data", "data",
-      "data", "data",
       "x", "y",
       "data", "data"
     )
@@ -254,14 +260,17 @@ board <- new_dock_board(
   #      vocabulary yet; the audience just sees "the engine").
   #   2. Analysis — KPI + drilldowns over the whole book, plus scatter+waterfall
   #      for single-policy drill-in (scatter click filters the waterfall).
-  #   3. Engine (Challenger) — introduce a second configuration to compare
-  #      against. Symmetric to tab 1.
-  #   4. Compare Portfolio — Challenger - Base diff at portfolio grain.
+  #   3. Compare — introduce a second engine config (Challenger) AND see the
+  #      Challenger - Base diff in one place. Scope (policy_picker) is
+  #      reachable here too so the user can switch between portfolio and
+  #      single-policy without leaving the tab. Works at any scope since
+  #      policy_picker filters upstream.
   layout = dock_layouts(
     `Engine selection` = dock_view(
       "portfolio_inputs",
+      "policy_picker",
       "base_grid", "base_price",
-      "preview_xfilter", "preview_waterfall",
+      "policy_waterfall",
       "base_premium",
       active = TRUE
     ),
@@ -271,10 +280,9 @@ board <- new_dock_board(
       "portfolio_drill_country", "portfolio_drill_peril",
       "policy_scatter", "policy_waterfall"
     ),
-    `Engine (Challenger)` = dock_view(
-      "chal_grid", "chal_price", "chal_premium"
-    ),
-    `Compare Portfolio` = dock_view(
+    Compare = dock_view(
+      "policy_picker",
+      "chal_grid", "chal_price", "chal_premium",
       "compare_portfolio_xfilter", "compare_portfolio_waterfall"
     )
   )
