@@ -60,5 +60,18 @@
     package = pkgname,
     overwrite = TRUE
   )
+  blockr.core::register_blocks(
+    "new_insurance_dataset_block",
+    name = "Insurance dataset",
+    description = paste(
+      "Variant of blockr.core::new_dataset_block() with the dataset",
+      "package locked to blockr.insurance, so end users adding the",
+      "block in a running app can pick any insurance dataset shipped",
+      "by the package (default: motor_portfolio)."
+    ),
+    category = "input",
+    package = pkgname,
+    overwrite = TRUE
+  )
   invisible(NULL)
 }
