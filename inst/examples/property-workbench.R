@@ -53,7 +53,7 @@ board <- new_dock_board(
     # cascading to locations + claims via FK. Default state is multi-mode
     # with empty values → passthrough (whole book). Switch to single-mode
     # via the gear popover to pick one policy.
-    policy_picker = new_bi_filter_block(
+    policy_picker = new_value_filter_block(
       state = list(columns = list(
         list(name = "policy_id", table = "policies",
              mode = "multi", values = character())
