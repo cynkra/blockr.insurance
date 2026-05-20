@@ -19,7 +19,8 @@ options(
   blockr.html_table_preview = TRUE,
   # Dock's hidden-output detection misreports block visibility — without
   # this, blocks stay suspended and panels never render.
-  blockr.lazy_eval         = FALSE
+  blockr.lazy_eval         = FALSE,
+  blockr.ai_model          = "gpt-4o-mini"
 )
 
 pkgload::load_all("blockr.core")
@@ -30,6 +31,8 @@ pkgload::load_all("blockr.bi")
 pkgload::load_all("blockr.input")
 pkgload::load_all("blockr.extra")
 pkgload::load_all("blockr.session")
+pkgload::load_all("blockr.ai")
+pkgload::load_all("blockr.code")
 pkgload::load_all("blockr.insurance")
 
 portfolio_dir <- blockr.insurance::default_portfolio_dir()
@@ -296,4 +299,11 @@ board <- new_dock_board(
   )
 )
 
-serve(board, plugins = custom_plugins(c(manage_project())))
+serve(
+  board,
+  plugins = custom_plugins(c(
+    ai_ctrl_block(),
+    manage_project(),
+    generate_flat_code()
+  ))
+)

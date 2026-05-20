@@ -27,7 +27,8 @@ options(
   blockr.eval_parent_env      = asNamespace("stats"),
   blockr.html_table_preview   = TRUE,
   blockr.session_url_params   = TRUE,
-  blockr.lazy_eval            = FALSE
+  blockr.lazy_eval            = FALSE,
+  blockr.ai_model             = "gpt-4o-mini"
 )
 
 pkgload::load_all("blockr.core")
@@ -43,6 +44,8 @@ pkgload::load_all("blockr.session")
 # html_table_preview option actually fires on initial load. Without this,
 # tile / waterfall outputs stay suspended until you nudge a block.
 pkgload::load_all("blockr.extra")
+pkgload::load_all("blockr.ai")
+pkgload::load_all("blockr.code")
 pkgload::load_all("blockr.insurance")
 
 # CSV paths shipped with the package — `new_read_block(source = "path")`
@@ -529,7 +532,14 @@ board <- new_dock_board(
 
 
 shiny::runApp(
-  serve(board, plugins = custom_plugins(manage_project()))
+  serve(
+    board,
+    plugins = custom_plugins(c(
+      ai_ctrl_block(),
+      manage_project(),
+      generate_flat_code()
+    ))
+  )
   # port = 3838,
   # host = "127.0.0.1"
 )
