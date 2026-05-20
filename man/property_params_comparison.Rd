@@ -13,7 +13,7 @@ property_params_comparison
 \description{
 Same shape as \link{property_params}, with the Italian \code{base_rate} bumped by
 30\%. This is the second parameter set the bundled
-\code{inst/examples/portfolio-explorer.R} runs the property portfolio against,
+\code{dev/portfolio-explorer-static.R} runs the property portfolio against,
 so the resulting per-location diff is non-zero (and concentrated in
 Italian locations). Built by \code{data-raw/build_property.R}.
 }

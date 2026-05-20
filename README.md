@@ -29,7 +29,7 @@ The motor cubes are derived from plain-CRAN sources (`insuranceData::dataCar` fo
 
 ## Example workflow
 
-A five-workspace [blockr](https://github.com/BristolMyersSquibb/blockr) dashboard ships in `inst/examples/motor.R`:
+A five-workspace [blockr](https://github.com/BristolMyersSquibb/blockr) dashboard ships in `dev/motor.R`:
 
 | Workspace | Shows |
 |---|---|
@@ -42,8 +42,8 @@ A five-workspace [blockr](https://github.com/BristolMyersSquibb/blockr) dashboar
 ### Run
 
 ```r
-library(blockr.insurance)
-source(system.file("examples", "motor.R", package = "blockr.insurance"))
+pkgload::load_all("blockr.insurance")
+source("blockr.insurance/dev/motor.R")
 ```
 
 ### Block stack
@@ -58,7 +58,7 @@ No insurance-specific blocks. Custom blocks (e.g. waterfall, loss-triangle rende
 
 ## Life mortality example
 
-A five-workspace life-insurance dashboard ships in `inst/examples/life.R`, parallel in structure to `motor.R` but built around the actual-to-expected (A/E) ratio against VBT 2015:
+A five-workspace life-insurance dashboard ships in `dev/life.R`, parallel in structure to `motor.R` but built around the actual-to-expected (A/E) ratio against VBT 2015:
 
 | Workspace | Shows |
 |---|---|
@@ -69,22 +69,22 @@ A five-workspace life-insurance dashboard ships in `inst/examples/life.R`, paral
 | Face_Amount | A/E by `face_amount_band` split by gender — anti-selection at jumbo bands |
 
 ```r
-source(system.file("examples", "life.R", package = "blockr.insurance"))
+source("blockr.insurance/dev/life.R")
 ```
 
 ## Property workbench
 
-`inst/examples/property-workbench.R` is the SAA-targeted Homer-Actuarial-UI replica: same property book, two engine versions (`engine_property()` and `engine_property_v2()` with CAT loading), engine version toggleable live via a dropdown on `new_price_block()`, drill into a policy via a scatter click, side-by-side compare at portfolio grain. Five workspaces (Setup / Portfolio / Policy / Compare-Portfolio).
+`dev/property-workbench.R` is the SAA-targeted Homer-Actuarial-UI replica: same property book, two engine versions (`engine_property()` and `engine_property_v2()` with CAT loading), engine version toggleable live via a dropdown on `new_price_block()`, drill into a policy via a scatter click, side-by-side compare at portfolio grain. Five workspaces (Setup / Portfolio / Policy / Compare-Portfolio).
 
 ```r
-source(system.file("examples", "property-workbench.R", package = "blockr.insurance"))
+source("blockr.insurance/dev/property-workbench.R")
 ```
 
 ## Portfolio explorer (static)
 
 A *portfolio* is a folder of policies, each with `inputs/{locations,claims}.csv`. `run_portfolio(dir)` calls the engine for every policy, writes per-policy `outputs/premium.csv`, and binds them all into a portfolio-root `premium.csv` with an added `policy_id` column.
 
-`inst/examples/portfolio-explorer-static.R` compares **two pricing scenarios on the same book** read from those pre-baked CSVs (bundled as `portfolio-property/` run with `property_params`, and `portfolio-property-comparison/` run with `property_params_comparison` — same inputs, Italian `base_rate` ×1.30) across four workspaces. Read-only, no live engine — superseded by `property-workbench.R` for live work; kept as a static reference.
+`dev/portfolio-explorer-static.R` compares **two pricing scenarios on the same book** read from those pre-baked CSVs (bundled as `portfolio-property/` run with `property_params`, and `portfolio-property-comparison/` run with `property_params_comparison` — same inputs, Italian `base_rate` ×1.30) across four workspaces. Read-only, no live engine — superseded by `property-workbench.R` for live work; kept as a static reference.
 
 | Workspace | Shows |
 |---|---|
@@ -94,7 +94,7 @@ A *portfolio* is a folder of policies, each with `inputs/{locations,claims}.csv`
 | Comparison | Per-location `compare_block` on `(policy_id, location_id)`, diff drill-down, and a waterfall summing the diffs across base / exposure / risk / model price |
 
 ```r
-source(system.file("examples", "portfolio-explorer-static.R", package = "blockr.insurance"))
+source("blockr.insurance/dev/portfolio-explorer-static.R")
 ```
 
 Helpers:
@@ -106,12 +106,12 @@ Helpers:
 
 ## Reinsurance demo (Swiss Re conversation)
 
-`inst/examples/reinsurance.R` is one board for a group-risk audience
+`dev/reinsurance.R` is one board for a group-risk audience
 at a reinsurer. The data is a synthetic assumed book (one row per
 treaty × cedant × peril × region × LOB × year), a 4,000-event
 modelled catalogue fanned across five scenarios, and a per-event
 breakdown table (cedant shares + treaty layer impacts), built
-deterministically by `inst/examples/_reins_data.R`. Not a real CAT
+deterministically by `dev/_reins_data.R`. Not a real CAT
 model — sized to make the live crossfilter + exceedance-curve
 story land.
 
@@ -122,7 +122,7 @@ story land.
 | Cedant profile | Pick a cedant from the bar chart; downstream blocks light up with that cedant's KPIs, peril mix, treaty mix, loss over time, plus the "Active cedant" tile. Uses the `latest_block + dm_semi_filter_block` pattern from the CEDX clinical explorer in `blockr.sandbox` — semi-filter cascades through the dm via declared PK / FK so every cedant-linked table restricts to the picked cedant. Same scaffolding extends to event, peril, region, etc. — add one more semi-filter and a stack of stock blocks per drill. |
 
 ```r
-source(system.file("examples", "reinsurance.R", package = "blockr.insurance"))
+source("blockr.insurance/dev/reinsurance.R")
 ```
 
 `ai_ctrl_block()` is enabled board-wide, so filter / arrange /

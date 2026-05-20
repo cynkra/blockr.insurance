@@ -244,7 +244,7 @@ NULL
 #'
 #' Same shape as [property_params], with the Italian `base_rate` bumped by
 #' 30%. This is the second parameter set the bundled
-#' `inst/examples/portfolio-explorer.R` runs the property portfolio against,
+#' `dev/portfolio-explorer-static.R` runs the property portfolio against,
 #' so the resulting per-location diff is non-zero (and concentrated in
 #' Italian locations). Built by `data-raw/build_property.R`.
 #'
