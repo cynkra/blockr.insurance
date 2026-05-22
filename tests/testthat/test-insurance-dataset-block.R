@@ -37,6 +37,17 @@ test_that("new_insurance_dataset_block returns the selected dataset", {
   )
 })
 
+test_that("new_insurance_dataset_block survives the deserialisation payload", {
+  # `blockr_deser.block()` rebuilds a block by calling the ctor with the
+  # serialised state spread into `...`. For dataset blocks the state is
+  # `list(dataset, package)`, so the wrapper must not collide on `package`.
+  blk <- new_insurance_dataset_block(
+    dataset = "motor_losses",
+    package = "blockr.insurance"
+  )
+  expect_s3_class(blk, "insurance_dataset_block")
+})
+
 test_that("new_insurance_dataset_block dataset state updates on input change", {
   block <- new_insurance_dataset_block()
 
