@@ -29,6 +29,10 @@
 #' @export
 new_insurance_dataset_block <- function(dataset = "motor_portfolio", ...) {
   dots <- list(...)
+  # `package` is locked below; drop any value coming through `...` (notably
+  # from the deserialised state payload) to avoid a duplicate-arg error in
+  # `blockr_deser.block()`.
+  dots$package <- NULL
   if (is.null(dots$ctor)) {
     dots$ctor <- sys.function()
   }
