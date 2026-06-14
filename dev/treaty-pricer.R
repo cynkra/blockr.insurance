@@ -9,7 +9,7 @@
 # Then open http://127.0.0.1:3838/
 
 for (p in c("blockr.core", "blockr.dock", "blockr.dplyr",
-            "blockr.input", "blockr.extra", "blockr.bi",
+            "blockr.input", "blockr.extra", "blockr.viz",
             "blockr.insurance")) {
   pkgload::load_all(p, quiet = TRUE)
 }

@@ -144,7 +144,7 @@ new_price_block <- function(
         price_block_dep(),
         shiny::div(
           class = "block-container",
-          # Aesthetic-row layout — same shape as blockr.bi::aesthetic_row in
+          # Aesthetic-row layout — same shape as blockr.viz::aesthetic_row in
           # tile-block.R: flex row, no border on the outer container, label
           # on the left as plain text, bordered control on the right. The
           # Blockr.Select inside carries the only visible border.

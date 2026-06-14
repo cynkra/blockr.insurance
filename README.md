@@ -52,7 +52,7 @@ The example uses generic blockr blocks:
 
 - `blockr.core` (read, transform), `blockr.dock` (panel layout), `blockr.dag` (DAG extension)
 - `blockr.dm` (dm + crossfilter + pull), `blockr.dplyr` (filter / mutate / summarize)
-- `blockr.bi` (KPI block), `blockr.sandbox` (drilldown chart)
+- `blockr.viz` (KPI block), `blockr.sandbox` (drilldown chart)
 
 No insurance-specific blocks. Custom blocks (e.g. waterfall, loss-triangle renderer, per-policy view) are roadmap items.
 

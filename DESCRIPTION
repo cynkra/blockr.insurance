@@ -48,7 +48,7 @@ Suggests:
     blockr.dm,
     blockr.dplyr,
     blockr.io,
-    blockr.bi,
+    blockr.viz,
     blockr.dag,
     blockr.session,
     blockr.sandbox,
