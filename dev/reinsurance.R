@@ -39,7 +39,7 @@ pkgload::load_all("blockr.dplyr")
 pkgload::load_all("blockr.io")
 pkgload::load_all("blockr.sandbox")
 pkgload::load_all("blockr.extra")
-pkgload::load_all("blockr.bi")
+pkgload::load_all("blockr.viz")
 pkgload::load_all("blockr.session")
 pkgload::load_all("blockr.dag")
 pkgload::load_all("blockr.ai")
@@ -171,7 +171,7 @@ board <- new_dock_board(
       ),
       block_name = "KPIs"
     ),
-    ov_drill_peril = new_drilldown_chart_block(
+    ov_drill_peril = new_chart_block(
       chart_type = "bar",
       group_by   = "peril",
       color_by   = "region",
@@ -179,7 +179,7 @@ board <- new_dock_board(
       agg_fn     = "sum",
       block_name = "Peril x Region"
     ),
-    ov_drill_cedant = new_drilldown_chart_block(
+    ov_drill_cedant = new_chart_block(
       chart_type = "bar",
       group_by   = "cedant",
       color_by   = "line_of_business",
@@ -232,7 +232,7 @@ board <- new_dock_board(
       ),
       block_name = "Exceedance by scenario"
     ),
-    pml_curve = new_drilldown_chart_block(
+    pml_curve = new_chart_block(
       chart_type = "line",
       x_col      = "return_period_years",
       y_col      = "gross_loss_musd",
@@ -247,7 +247,7 @@ board <- new_dock_board(
     # Same pattern as the CEDX patient profile in blockr.sandbox.
     cp_drill_pull = new_dm_pull_block(table = "exposure",
       block_name = "Pull"),
-    cp_drill = new_drilldown_chart_block(
+    cp_drill = new_chart_block(
       chart_type = "bar",
       group_by   = "cedant",
       color_by   = "region",
@@ -296,7 +296,7 @@ board <- new_dock_board(
       ),
       block_name = "KPIs"
     ),
-    cp_peril_bar = new_drilldown_chart_block(
+    cp_peril_bar = new_chart_block(
       chart_type = "bar",
       group_by   = "peril",
       color_by   = "region",
@@ -304,7 +304,7 @@ board <- new_dock_board(
       agg_fn     = "sum",
       block_name = "Peril mix"
     ),
-    cp_treaty_bar = new_drilldown_chart_block(
+    cp_treaty_bar = new_chart_block(
       chart_type = "bar",
       group_by   = "treaty_type",
       color_by   = "line_of_business",
@@ -312,7 +312,7 @@ board <- new_dock_board(
       agg_fn     = "sum",
       block_name = "Treaty mix"
     ),
-    cp_year_bar = new_drilldown_chart_block(
+    cp_year_bar = new_chart_block(
       chart_type = "bar",
       group_by   = "underwriting_year",
       color_by   = "peril",

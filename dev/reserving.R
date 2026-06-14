@@ -36,7 +36,7 @@ pkgload::load_all("blockr.dplyr")
 pkgload::load_all("blockr.io")
 pkgload::load_all("blockr.sandbox")
 pkgload::load_all("blockr.extra")
-pkgload::load_all("blockr.bi")
+pkgload::load_all("blockr.viz")
 pkgload::load_all("blockr.echarts")
 pkgload::load_all("blockr.session")
 pkgload::load_all("blockr.dag")
@@ -150,7 +150,7 @@ board <- new_dock_board(
       ),
       block_name = "Reshape factors -> long"
     ),
-    df_chart = new_drilldown_chart_block(
+    df_chart = new_chart_block(
       chart_type = "bar",
       group_by   = "dev_step",
       metric     = "factor",

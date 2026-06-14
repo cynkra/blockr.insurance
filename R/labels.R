@@ -2,7 +2,7 @@
 #'
 #' Sets `attr(<col>, "label")` on every column for which a label is known
 #' in [property_labels()]. Surfaces friendly column names in blocks that
-#' read column labels (e.g. `drilldown_chart_block` reads
+#' read column labels (e.g. `chart_block` reads
 #' `attr(values, "label")` and shows it next to the column name in
 #' selectors).
 #'

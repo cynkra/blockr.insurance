@@ -21,7 +21,7 @@ pkgload::load_all("blockr.dock")
 pkgload::load_all("blockr.dplyr")
 pkgload::load_all("blockr.input")
 pkgload::load_all("blockr.extra")
-pkgload::load_all("blockr.bi")
+pkgload::load_all("blockr.viz")
 pkgload::load_all("blockr.insurance")
 
 stopifnot(requireNamespace("Pareto", quietly = TRUE))
@@ -155,11 +155,11 @@ board <- new_dock_board(
       ),
       block_name = "Add return period"
     ),
-    exceedance = new_drilldown_chart_block(
+    exceedance = new_chart_block(
       chart_type = "line", x = "return_period", y = "total_ceded",
       block_name = "Exceedance curve (programme cession)"
     ),
-    layer_bar = new_drilldown_chart_block(
+    layer_bar = new_chart_block(
       chart_type = "bar", group = "layer_id", metric = "ceded", agg_fn = "mean",
       block_name = "Expected ceded loss (per layer)"
     )

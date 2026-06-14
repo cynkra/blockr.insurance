@@ -31,7 +31,7 @@ pkgload::load_all("blockr.dock")
 pkgload::load_all("blockr.dplyr")
 pkgload::load_all("blockr.input")
 pkgload::load_all("blockr.extra")
-pkgload::load_all("blockr.bi")
+pkgload::load_all("blockr.viz")
 pkgload::load_all("blockr.insurance")
 
 stopifnot(requireNamespace("Pareto", quietly = TRUE))
@@ -173,7 +173,7 @@ board <- new_dock_board(
     # === EXCEEDANCE CURVE ===
     # drilldown_chart line, x=return_period y=total_loss. echarts-backed
     # (nicer than ggplot for this kind of plot).
-    exceedance = new_drilldown_chart_block(
+    exceedance = new_chart_block(
       chart_type = "line",
       x          = "return_period",
       y          = "total_loss",

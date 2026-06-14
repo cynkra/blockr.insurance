@@ -33,7 +33,7 @@ pkgload::load_all("blockr.dplyr")
 pkgload::load_all("blockr.io")
 pkgload::load_all("blockr.sandbox")
 pkgload::load_all("blockr.extra")
-pkgload::load_all("blockr.bi")
+pkgload::load_all("blockr.viz")
 pkgload::load_all("blockr.session")
 pkgload::load_all("blockr.dag")
 
@@ -113,7 +113,7 @@ board <- new_dock_board(
       ),
       block_name = "Sum by Vehicle x Cover"
     ),
-    sev_drill = new_drilldown_chart_block(
+    sev_drill = new_chart_block(
       chart_type = "bar",
       group_by   = "Vehicle_type",
       color_by   = "Cover",
@@ -145,7 +145,7 @@ board <- new_dock_board(
       ),
       block_name = "Year -> character (categorical X axis)"
     ),
-    trend_drill = new_drilldown_chart_block(
+    trend_drill = new_chart_block(
       chart_type = "line",
       x_col      = "Year",
       y_col      = "Total_Incurred",

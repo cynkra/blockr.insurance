@@ -28,7 +28,7 @@ library(blockr.dplyr)
 library(blockr.io)
 library(blockr.sandbox)
 library(blockr.extra)
-library(blockr.bi)
+library(blockr.viz)
 library(blockr.session)
 library(blockr.dag)
 
@@ -88,7 +88,7 @@ board <- new_dock_board(
       ),
       block_name = "Portfolio KPIs"
     ),
-    ov_drill = new_drilldown_chart_block(
+    ov_drill = new_chart_block(
       chart_type = "bar",
       group_by = "Vehicle_type",
       color_by = "Cover",
@@ -134,7 +134,7 @@ board <- new_dock_board(
       ),
       block_name = "Year -> character (categorical X axis)"
     ),
-    prof_drill = new_drilldown_chart_block(
+    prof_drill = new_chart_block(
       chart_type = "line",
       x_col = "Year",
       y_col = "Total_Premium",
@@ -153,7 +153,7 @@ board <- new_dock_board(
       ),
       block_name = "Large claims (Latest > 10K)"
     ),
-    claims_drill = new_drilldown_chart_block(
+    claims_drill = new_chart_block(
       chart_type = "bar",
       group_by = "Year",
       color_by = "Vehicle_type",

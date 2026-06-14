@@ -49,7 +49,7 @@ pkgload::load_all("blockr.dock")
 pkgload::load_all("blockr.dplyr")
 pkgload::load_all("blockr.input")
 pkgload::load_all("blockr.extra")
-pkgload::load_all("blockr.bi")
+pkgload::load_all("blockr.viz")
 pkgload::load_all("blockr.insurance")
 
 stopifnot(requireNamespace("Pareto", quietly = TRUE))
@@ -264,7 +264,7 @@ board <- new_dock_board(
     # gesture: bump a layer's expected_loss or drop its n_reinstatements,
     # watch its bar grow. The killer chart that only exists because
     # we're simulating with treaty terms.
-    reins_chart = new_drilldown_chart_block(
+    reins_chart = new_chart_block(
       chart_type = "bar",
       group      = "layer_id",
       metric     = "reinstatements_consumed",
@@ -293,7 +293,7 @@ board <- new_dock_board(
       ),
       block_name = "Add return period"
     ),
-    exceedance = new_drilldown_chart_block(
+    exceedance = new_chart_block(
       chart_type = "line",
       x          = "return_period",
       y          = "total_ceded",

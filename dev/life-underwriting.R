@@ -35,7 +35,7 @@ pkgload::load_all("blockr.core")
 pkgload::load_all("blockr.dock")
 pkgload::load_all("blockr.dplyr")
 pkgload::load_all("blockr.dm")
-pkgload::load_all("blockr.bi")
+pkgload::load_all("blockr.viz")
 pkgload::load_all("blockr.dag")
 pkgload::load_all("blockr.input")
 pkgload::load_all("blockr.io")
@@ -259,7 +259,7 @@ board <- new_dock_board(
     # === DRIVER CHARTS ===
     # 1. Expected claims by age band, split by coverage.
     age_sum  = sum_by(c("age_band", "coverage_type")),
-    age_chart = new_drilldown_chart_block(
+    age_chart = new_chart_block(
       chart_type = "bar",
       group_by = "age_band",
       color_by = "coverage_type",
@@ -270,7 +270,7 @@ board <- new_dock_board(
 
     # 2. Expected claims by sex, color by smoker.
     ssm_sum  = sum_by(c("sex", "smoker")),
-    ssm_chart = new_drilldown_chart_block(
+    ssm_chart = new_chart_block(
       chart_type = "bar",
       group_by = "sex",
       color_by = "smoker",
@@ -281,7 +281,7 @@ board <- new_dock_board(
 
     # 3. Expected claims by country, split by coverage.
     cty_sum  = sum_by(c("country", "coverage_type")),
-    cty_chart = new_drilldown_chart_block(
+    cty_chart = new_chart_block(
       chart_type = "bar",
       group_by = "country",
       color_by = "coverage_type",
@@ -300,7 +300,7 @@ board <- new_dock_board(
     ),
     pol_head = new_head_block(n = 15L,
                               block_name = "Top 15 lives"),
-    pol_chart = new_drilldown_chart_block(
+    pol_chart = new_chart_block(
       chart_type = "bar",
       group_by = "person_id",
       metric   = "Expected_Claims",
@@ -310,7 +310,7 @@ board <- new_dock_board(
 
     # 5. UW impact: full-UW vs raw (shows what UW assessment is changing).
     uw_sum  = sum_by("coverage_type"),
-    uw_chart = new_drilldown_chart_block(
+    uw_chart = new_chart_block(
       chart_type = "bar",
       group_by = "coverage_type",
       metric   = "Expected_Claims",
@@ -336,7 +336,7 @@ board <- new_dock_board(
       ),
       block_name = "Insured value by country x coverage"
     ),
-    employees_chart = new_drilldown_chart_block(
+    employees_chart = new_chart_block(
       chart_type = "bar",
       group_by = "country",
       color_by = "coverage_type",
@@ -360,7 +360,7 @@ board <- new_dock_board(
       ),
       block_name = "Claims by year x coverage"
     ),
-    claims_chart = new_drilldown_chart_block(
+    claims_chart = new_chart_block(
       chart_type = "bar",
       group_by = "year",
       color_by = "coverage_type",

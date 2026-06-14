@@ -27,7 +27,7 @@ pkgload::load_all("blockr.core")
 pkgload::load_all("blockr.dock")
 pkgload::load_all("blockr.dm")
 pkgload::load_all("blockr.dplyr")
-pkgload::load_all("blockr.bi")
+pkgload::load_all("blockr.viz")
 pkgload::load_all("blockr.input")
 pkgload::load_all("blockr.extra")
 pkgload::load_all("blockr.session")
@@ -146,14 +146,14 @@ board <- new_dock_board(
       ),
       block_name = "KPIs"
     ),
-    portfolio_drill_country = new_drilldown_chart_block(
+    portfolio_drill_country = new_chart_block(
       chart_type = "bar",
       group_by   = "country",
       metric     = "model_price",
       agg_fn     = "sum",
       block_name = "By country"
     ),
-    portfolio_drill_peril = new_drilldown_chart_block(
+    portfolio_drill_peril = new_chart_block(
       chart_type = "bar",
       group_by   = "peril",
       metric     = "model_price",
@@ -173,7 +173,7 @@ board <- new_dock_board(
 
     # === POLICY VIEW — scatter (visual) + waterfall (price build-up) ===
     # Scatter is purely visual now; filter state lives in analysis_xfilter.
-    policy_scatter = new_drilldown_chart_block(
+    policy_scatter = new_chart_block(
       chart_type = "scatter",
       x_col      = "tiv",
       y_col      = "model_price",

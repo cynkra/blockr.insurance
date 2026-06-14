@@ -33,7 +33,7 @@ pkgload::load_all("blockr.dplyr")
 pkgload::load_all("blockr.io")
 pkgload::load_all("blockr.sandbox")
 pkgload::load_all("blockr.extra")
-pkgload::load_all("blockr.bi")
+pkgload::load_all("blockr.viz")
 pkgload::load_all("blockr.session")
 pkgload::load_all("blockr.dag")
 
@@ -200,7 +200,7 @@ board <- new_dock_board(
       ),
       block_name = "Sum by Module x LOB"
     ),
-    mod_drill = new_drilldown_chart_block(
+    mod_drill = new_chart_block(
       chart_type = "bar",
       group_by   = "module",
       color_by   = "lob",
@@ -226,7 +226,7 @@ board <- new_dock_board(
       ),
       block_name = "Sum by LOB"
     ),
-    tp_drill = new_drilldown_chart_block(
+    tp_drill = new_chart_block(
       chart_type = "bar",
       group_by   = "lob",
       color_by   = "lob",
@@ -246,7 +246,7 @@ board <- new_dock_board(
       ),
       block_name = "TP by period x LOB"
     ),
-    tp_trend_drill = new_drilldown_chart_block(
+    tp_trend_drill = new_chart_block(
       chart_type = "line",
       x_col      = "period",
       y_col      = "TP_Total",
