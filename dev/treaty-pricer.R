@@ -9,13 +9,29 @@
 # is a blockr.dplyr block, and only four small function blocks remain — the two
 # Pareto calls, the fit table, and the per-claim layering (the one step that
 # isn't a dplyr verb). Aggregation and pricing are summarize/mutate blocks you
-# can read off the UI.
+# can read off the UI; every VIEW is a blockr.viz tile / chart / table.
+#
+# Views (blockr.viz):
+#   - Programme KPI tiles (expected ceded loss, technical premium, RI premium)
+#     + a blended-loss-ratio percent tile, off a one-row programme summarize.
+#   - A per-layer quote TABLE with in-cell data bars on the money columns.
+#   - A per-layer expected-ceded BAR that is ALSO a drill source: click a layer
+#     to break out its year-by-year ceded trajectory + a selected-layer
+#     scorecard (the chart emits the raw simulated frame filtered to that layer).
+#   - A clickable per-layer KPI TILE matrix (drill=TRUE on layer_id): click a
+#     layer card to break out that layer's full quote row as a detail table.
+#   - The programme exceedance / return-period curve, and the fitted Pareto
+#     alphas as a bar + table.
 #
 # Pipeline:
-#   calibration tower ─► fit ─► (fit table)
-#                          └──► simulate ─► apply structure ─┬─► summarize ─► mutate (price)
-#   structure tower ──────────────────────►                 ├─► summarize ─► mutate ─► exceedance
-#                                                            └─► per-layer bar
+#   calibration tower ─► fit ─┬─► fit_table ─┬─► fit_chart (αs by threshold)
+#                             │              └─► fit_table_view
+#                             └─► simulate ─► apply structure ─┬─► layer_stats ─► priced ─┬─► prog_kpi_sum ─► KPI tiles
+#                                                              │                          ├─► quote_table (data bars)
+#                                                              │                          └─► layer_kpi_tile ─► layer_quote_detail
+#                                                              ├─► per_year ─► exceed_rank ─► exceedance
+#                                                              └─► layer_bar (drill) ─┬─► layer_detail_line (ceded by year)
+#                                                                                     └─► layer_detail_sum ─► layer_detail_tile
 #
 # Run from an R session at the workspace root:
 #   source("blockr.insurance/dev/treaty-pricer.R")
@@ -83,6 +99,17 @@ board <- new_dock_board(
       },
       block_name = "Fit (piecewise Pareto αs)"
     ),
+    # Fitted tail-index profile: one bar per Pareto threshold, height = alpha.
+    fit_chart = new_chart_block(
+      chart_type = "bar", group = "threshold", metric = "alpha",
+      agg_fn = "mean", sort_by = "threshold", sort_dir = "asc",
+      orientation = "vertical",
+      block_name = "Fitted Pareto αs (by threshold)"
+    ),
+    fit_table_view = new_table_block(
+      rowname = "threshold", values = c("alpha", "freq"), digits = 3L,
+      block_name = "Fitted Pareto αs (table)"
+    ),
 
     # === SIMULATE (Pareto) — one row per simulated claim ===
     simulate = new_function_block(
@@ -134,7 +161,96 @@ board <- new_dock_board(
       block_name = "Treaty stats (price)"
     ),
 
-    # === DISTRIBUTIONS (dplyr + charts) ===
+    # === PROGRAMME KPIs (blockr.viz tiles) ===
+    # The tile is a pure renderer: sum the priced layers into a ONE-ROW frame
+    # whose column names ARE the card labels; the tiles then render them.
+    # Blended loss ratio = sum(loss) / sum(premium), not a mean of ratios.
+    prog_kpi_sum = new_summarize_block(
+      summaries = list(
+        list(type = "expr", name = "Expected ceded loss",
+             expr = "sum(expected_loss, na.rm = TRUE)"),
+        list(type = "expr", name = "Technical premium",
+             expr = "sum(technical_premium, na.rm = TRUE)"),
+        list(type = "expr", name = "Reinsurance premium",
+             expr = "sum(reins_prem, na.rm = TRUE)"),
+        list(type = "expr", name = "Blended loss ratio",
+             expr = "sum(expected_loss, na.rm = TRUE) / sum(reins_prem, na.rm = TRUE)")
+      ),
+      by = list(),
+      block_name = "Programme totals"
+    ),
+    prog_kpi = new_tile_block(
+      value = c("Expected ceded loss", "Technical premium", "Reinsurance premium"),
+      format = "number", unit = "USD m",
+      block_name = "Programme KPIs"
+    ),
+    prog_lr_tile = new_tile_block(
+      value = "Blended loss ratio", format = "percent",
+      block_name = "Blended loss ratio"
+    ),
+
+    # === QUOTE TABLE (blockr.viz table, in-cell data bars) ===
+    quote_table = new_table_block(
+      rowname = "layer_id",
+      values = c("expected_loss", "reins_prem", "technical_premium", "loss_ratio"),
+      cell_color = drilldown_table_color("bar",
+        columns = c("expected_loss", "technical_premium")),
+      digits = 2L,
+      block_name = "Quote (per layer)"
+    ),
+
+    # === PER-LAYER BAR — drill source #1 (year detail) ===
+    # Mean ceded = expected ceded loss per layer. drill="layer_id": a bar click
+    # emits apply_structure FILTERED to that layer (the raw simulated frame, so
+    # the per-year trajectory survives) to the layer-detail views below.
+    layer_bar = new_chart_block(
+      chart_type = "bar", group = "layer_id", metric = "ceded", agg_fn = "mean",
+      drill = "layer_id", sort_by = "layer_id", sort_dir = "asc",
+      block_name = "Expected ceded loss (per layer — click to drill)"
+    ),
+
+    # === PER-LAYER KPI MATRIX — drill source #2 (the clickable tile) ===
+    # One row per layer over the priced frame; drill=TRUE + by="layer_id" makes
+    # a card click emit `priced` filtered to that layer, feeding the quote
+    # detail table below. (Tiles don't aggregate, so they read the one-row-per-
+    # layer priced frame, not the raw simulated frame.)
+    layer_kpi_tile = new_tile_block(
+      value = c("expected_loss", "technical_premium"),
+      by = "layer_id", layout = "table", format = "number", unit = "USD m",
+      drill = TRUE,
+      block_name = "Per-layer KPIs (click a layer)"
+    ),
+    layer_quote_detail = new_table_block(
+      rowname = "layer_id",
+      values = c("expected_loss", "reins_prem", "technical_premium", "loss_ratio"),
+      digits = 2L,
+      block_name = "Selected layer — quote"
+    ),
+
+    # === LAYER DETAIL (drill targets of the bar) ===
+    layer_detail_line = new_chart_block(
+      chart_type = "line", x = "year", y = "ceded", metric = ".count",
+      block_name = "Selected layer — ceded by sim-year"
+    ),
+    layer_detail_sum = new_summarize_block(
+      summaries = list(
+        list(type = "expr", name = "Expected ceded loss",
+             expr = "mean(ceded, na.rm = TRUE)"),
+        list(type = "expr", name = "Worst-year ceded",
+             expr = "max(ceded, na.rm = TRUE)"),
+        list(type = "expr", name = "Reinsurance premium",
+             expr = "dplyr::first(reins_prem)")
+      ),
+      by = list(),
+      block_name = "Selected layer totals"
+    ),
+    layer_detail_tile = new_tile_block(
+      value = c("Expected ceded loss", "Worst-year ceded", "Reinsurance premium"),
+      format = "number", unit = "USD m",
+      block_name = "Selected layer KPIs"
+    ),
+
+    # === PROGRAMME EXCEEDANCE CURVE ===
     per_year = new_summarize_block(
       summaries = list(
         list(type = "simple", name = "total_ceded",
@@ -153,46 +269,64 @@ board <- new_dock_board(
     ),
     exceedance = new_chart_block(
       chart_type = "line", x = "return_period", y = "total_ceded",
+      metric = ".count",
       block_name = "Exceedance curve (programme cession)"
-    ),
-    layer_bar = new_chart_block(
-      chart_type = "bar", group = "layer_id", metric = "ceded", agg_fn = "mean",
-      block_name = "Expected ceded loss (per layer)"
     )
   ),
 
   links = links(
     from = c(
+      # towers
       "calibration_seed", "structure_seed",
-      "calibration_tower", "fit", "fit",
+      # loss model: fit -> fit_table -> {fit_chart, fit_table_view}; fit -> simulate
+      "calibration_tower", "fit", "fit_table", "fit_table", "fit",
+      # apply structure (x = claims, y = structure)
       "simulate", "structure_tower",
+      # price chain
       "apply_structure", "layer_stats",
-      "apply_structure", "per_year", "exceed_rank",
-      "apply_structure"
+      # programme KPI tiles
+      "priced", "prog_kpi_sum", "prog_kpi_sum",
+      # quote table + clickable per-layer KPI tile -> detail
+      "priced", "priced", "layer_kpi_tile",
+      # per-layer bar (drill) -> year-detail line + scorecard
+      "apply_structure", "layer_bar", "layer_bar", "layer_detail_sum",
+      # exceedance curve
+      "apply_structure", "per_year", "exceed_rank"
     ),
     to = c(
       "calibration_tower", "structure_tower",
-      "fit", "fit_table", "simulate",
+      "fit", "fit_table", "fit_chart", "fit_table_view", "simulate",
       "apply_structure", "apply_structure",
       "layer_stats", "priced",
-      "per_year", "exceed_rank", "exceedance",
-      "layer_bar"
+      "prog_kpi_sum", "prog_kpi", "prog_lr_tile",
+      "quote_table", "layer_kpi_tile", "layer_quote_detail",
+      "layer_bar", "layer_detail_line", "layer_detail_sum", "layer_detail_tile",
+      "per_year", "exceed_rank", "exceedance"
     ),
     input = c(
       "data", "data",
-      "data", "data", "data",
+      "data", "data", "data", "data", "data",
       "x", "y",
       "data", "data",
       "data", "data", "data",
-      "data"
+      "data", "data", "data",
+      "data", "data", "data", "data",
+      "data", "data", "data"
     )
   ),
 
   layouts = list(
-    Quote = dock_layout("structure_tower", "priced", name = "Quote"),
-    Loss_model = dock_layout("calibration_tower", "fit_table", name = "Loss model"),
-    Simulation = dock_layout("simulate", "exceedance", "layer_bar", name = "Simulation"),
-    Diagnostics = dock_layout("apply_structure", "layer_stats", name = "Diagnostics")
+    Quote = dock_layout(
+      "prog_kpi", "prog_lr_tile", "quote_table", "layer_bar", "layer_kpi_tile",
+      name = "Quote"),
+    Layer_detail = dock_layout(
+      "layer_bar", "layer_detail_line", "layer_detail_tile",
+      "layer_kpi_tile", "layer_quote_detail",
+      name = "Layer detail"),
+    Loss_model = dock_layout(
+      "calibration_tower", "fit_table_view", "fit_chart", name = "Loss model"),
+    Simulation = dock_layout(
+      "structure_tower", "exceedance", name = "Simulation")
   ),
   active = "Quote"
 )
