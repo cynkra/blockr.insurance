@@ -1,10 +1,9 @@
 # Solvency II / IFRS 17 review POC — pre-submission walkthrough of capital,
 # MCR/SCR, technical provisions, and module breakdown across LOBs.
 #
-# Run from an R session:
+# Run from an R session at the workspace root:
 #
-#   pkgload::load_all("blockr.insurance")
-#   source(system.file("examples", "solvency.R", package = "blockr.insurance"))
+#   source("blockr.insurance/dev/solvency.R")
 #
 # Four workspaces (Setup / Capital position / SCR modules / Technical provisions)
 # operate on three small *synthetic* tables defined inline below — they're
@@ -133,55 +132,90 @@ board <- new_dock_board(
     cap_pull = new_dm_pull_block(table = "capital",
       block_name = "Pull capital"),
     cap_sum = new_summarize_block(
-      state = list(
-        summaries = list(
-          list(type = "expr", name = "BSCR",
-               expr = "sum(bscr, na.rm = TRUE)"),
-          list(type = "expr", name = "Operational_Risk",
-               expr = "sum(op_risk, na.rm = TRUE)"),
-          list(type = "expr", name = "Adjustments",
-               expr = "sum(adj, na.rm = TRUE)"),
-          list(type = "expr", name = "SCR",
-               expr = "sum(scr, na.rm = TRUE)"),
-          list(type = "expr", name = "MCR",
-               expr = "sum(mcr, na.rm = TRUE)"),
-          list(type = "expr", name = "EOF_Total",
-               expr = "sum(eof_total, na.rm = TRUE)")
-        ),
-        by = list()
+      summaries = list(
+        list(type = "expr", name = "BSCR",
+             expr = "sum(bscr, na.rm = TRUE)"),
+        list(type = "expr", name = "Operational_Risk",
+             expr = "sum(op_risk, na.rm = TRUE)"),
+        list(type = "expr", name = "Adjustments",
+             expr = "sum(adj, na.rm = TRUE)"),
+        list(type = "expr", name = "SCR",
+             expr = "sum(scr, na.rm = TRUE)"),
+        list(type = "expr", name = "MCR",
+             expr = "sum(mcr, na.rm = TRUE)"),
+        list(type = "expr", name = "EOF_Total",
+             expr = "sum(eof_total, na.rm = TRUE)")
       ),
+      by = list(),
       block_name = "Aggregate capital position"
     ),
     cap_ratio = new_mutate_block(
-      state = list(
-        mutations = list(
-          list(name = "SCR_Ratio_pct",
-               expr = "round(100 * EOF_Total / SCR, 1)"),
-          list(name = "MCR_Ratio_pct",
-               expr = "round(100 * EOF_Total / MCR, 1)")
-        ),
-        by = list()
+      mutations = list(
+        list(name = "SCR_Ratio_pct",
+             expr = "round(100 * EOF_Total / SCR, 1)"),
+        list(name = "MCR_Ratio_pct",
+             expr = "round(100 * EOF_Total / MCR, 1)")
       ),
+      by = list(),
       block_name = "SCR / MCR ratios"
     ),
+    # The tile block is a pure renderer (it no longer aggregates), so the
+    # headline numbers are collapsed upstream into a ONE-ROW frame whose column
+    # names are the card labels. The capital position is already one row
+    # (cap_ratio has by = list()), so the three CHFm money columns use
+    # sum(na.rm) and the two percentage ratios use dplyr::first() (summing
+    # percentages would be wrong the moment the feeder ever holds >1 row).
+    cap_kpi_sum = new_summarize_block(
+      summaries = list(
+        list(type = "expr", name = "SCR (CHFm)",
+             expr = "sum(SCR, na.rm = TRUE)"),
+        list(type = "expr", name = "MCR (CHFm)",
+             expr = "sum(MCR, na.rm = TRUE)"),
+        list(type = "expr", name = "Eligible Own Funds (CHFm)",
+             expr = "sum(EOF_Total, na.rm = TRUE)"),
+        list(type = "expr", name = "SCR coverage (%)",
+             expr = "dplyr::first(SCR_Ratio_pct)"),
+        list(type = "expr", name = "MCR coverage (%)",
+             expr = "dplyr::first(MCR_Ratio_pct)")
+      ),
+      by = character(),
+      block_name = "Capital headline figures"
+    ),
+    # The two coverage columns already hold percent-unit values (e.g. 152.3
+    # meaning 152.3%). tk_resolve_format() only multiplies by 100 when every
+    # value is <= 1 (a fraction); values > 1 are taken as already-percent, so
+    # format = "percent" renders "152.3%" with no double-scaling. The three
+    # money columns keep the block-level format = "number".
     cap_kpi = new_tile_block(
-      showcase = "number",
-      state = list(
-        aesthetics = list(value = c("SCR", "MCR", "EOF_Total",
-                                    "SCR_Ratio_pct", "MCR_Ratio_pct")),
-        stats = list(value = "sum"),
-        formats = list(measure_labels = c(
-          SCR           = "SCR (CHFm)",
-          MCR           = "MCR (CHFm)",
-          EOF_Total     = "Eligible Own Funds (CHFm)",
-          SCR_Ratio_pct = "SCR coverage (%)",
-          MCR_Ratio_pct = "MCR coverage (%)"
-        ))
+      value = c("SCR (CHFm)", "MCR (CHFm)", "Eligible Own Funds (CHFm)",
+                "SCR coverage (%)", "MCR coverage (%)"),
+      format = "number",
+      measures = list(
+        "SCR coverage (%)" = list(format = "percent"),
+        "MCR coverage (%)" = list(format = "percent")
       ),
       block_name = "Capital headline KPIs"
     ),
-    cap_wf = new_waterfall_block(
-      measures = c("BSCR", "Operational_Risk", "Adjustments", "SCR"),
+    # The waterfall is now a chart_type on new_chart_block, which consumes a
+    # LONG (step, value) bridge — one row per step, each value a delta. The
+    # capital aggregate is a single wide row (BSCR + Operational_Risk +
+    # Adjustments = SCR); pivot those four columns long (pivot_longer keeps the
+    # listed column order, so the step axis reads BSCR -> SCR), then render with
+    # SCR as a reset-to-zero total bar.
+    cap_wf_long = new_pivot_longer_block(
+      cols = list("BSCR", "Operational_Risk", "Adjustments", "SCR"),
+      names_to = "step",
+      values_to = "value",
+      values_drop_na = FALSE,
+      names_prefix = "",
+      block_name = "Capital bridge (long form)"
+    ),
+    cap_wf = new_chart_block(
+      chart_type = "waterfall",
+      group = "step",
+      metric = "value",
+      agg_fn = "sum",
+      waterfall_totals = "SCR",
       block_name = "BSCR -> SCR bridge"
     ),
 
@@ -189,21 +223,19 @@ board <- new_dock_board(
     mod_pull = new_dm_pull_block(table = "modules",
       block_name = "Pull modules"),
     mod_sum = new_summarize_block(
-      state = list(
-        summaries = list(
-          list(type = "expr", name = "Gross",
-               expr = "sum(gross, na.rm = TRUE)"),
-          list(type = "expr", name = "Net",
-               expr = "sum(net, na.rm = TRUE)")
-        ),
-        by = c("module", "lob")
+      summaries = list(
+        list(type = "expr", name = "Gross",
+             expr = "sum(gross, na.rm = TRUE)"),
+        list(type = "expr", name = "Net",
+             expr = "sum(net, na.rm = TRUE)")
       ),
+      by = c("module", "lob"),
       block_name = "Sum by Module x LOB"
     ),
     mod_drill = new_chart_block(
       chart_type = "bar",
-      group_by   = "module",
-      color_by   = "lob",
+      group   = "module",
+      color   = "lob",
       metric     = "Gross",
       agg_fn     = "sum",
       block_name = "SCR module gross capital, by LOB"
@@ -213,23 +245,21 @@ board <- new_dock_board(
     tp_pull = new_dm_pull_block(table = "provisions",
       block_name = "Pull provisions"),
     tp_sum = new_summarize_block(
-      state = list(
-        summaries = list(
-          list(type = "expr", name = "BEL",
-               expr = "sum(bel, na.rm = TRUE)"),
-          list(type = "expr", name = "Risk_Margin",
-               expr = "sum(risk_margin, na.rm = TRUE)"),
-          list(type = "expr", name = "TP_Total",
-               expr = "sum(tp_total, na.rm = TRUE)")
-        ),
-        by = c("lob")
+      summaries = list(
+        list(type = "expr", name = "BEL",
+             expr = "sum(bel, na.rm = TRUE)"),
+        list(type = "expr", name = "Risk_Margin",
+             expr = "sum(risk_margin, na.rm = TRUE)"),
+        list(type = "expr", name = "TP_Total",
+             expr = "sum(tp_total, na.rm = TRUE)")
       ),
+      by = c("lob"),
       block_name = "Sum by LOB"
     ),
     tp_drill = new_chart_block(
       chart_type = "bar",
-      group_by   = "lob",
-      color_by   = "lob",
+      group   = "lob",
+      color   = "lob",
       metric     = "TP_Total",
       agg_fn     = "sum",
       block_name = "Technical provisions by LOB"
@@ -237,20 +267,18 @@ board <- new_dock_board(
     tp_trend_pull = new_dm_pull_block(table = "provisions",
       block_name = "Pull provisions"),
     tp_trend_sum = new_summarize_block(
-      state = list(
-        summaries = list(
-          list(type = "expr", name = "TP_Total",
-               expr = "sum(tp_total, na.rm = TRUE)")
-        ),
-        by = c("period", "lob")
+      summaries = list(
+        list(type = "expr", name = "TP_Total",
+             expr = "sum(tp_total, na.rm = TRUE)")
       ),
+      by = c("period", "lob"),
       block_name = "TP by period x LOB"
     ),
     tp_trend_drill = new_chart_block(
       chart_type = "line",
-      x_col      = "period",
-      y_col      = "TP_Total",
-      series_by  = "lob",
+      x      = "period",
+      y      = "TP_Total",
+      series  = "lob",
       block_name = "TP trend per LOB"
     )
   ),
@@ -259,13 +287,15 @@ board <- new_dock_board(
     from = c(
       "cap_read", "mod_read", "tp_read", "data",
       "global_filter", "cap_pull", "cap_sum", "cap_ratio", "cap_ratio",
+      "cap_kpi_sum", "cap_wf_long",
       "global_filter", "mod_pull", "mod_sum",
       "global_filter", "tp_pull", "tp_sum",
       "global_filter", "tp_trend_pull", "tp_trend_sum"
     ),
     to = c(
       "data", "data", "data", "global_filter",
-      "cap_pull", "cap_sum", "cap_ratio", "cap_kpi", "cap_wf",
+      "cap_pull", "cap_sum", "cap_ratio", "cap_kpi_sum", "cap_wf_long",
+      "cap_kpi", "cap_wf",
       "mod_pull", "mod_sum", "mod_drill",
       "tp_pull", "tp_sum", "tp_drill",
       "tp_trend_pull", "tp_trend_sum", "tp_trend_drill"
@@ -273,6 +303,7 @@ board <- new_dock_board(
     input = c(
       "capital", "modules", "provisions", "data",
       "data", "data", "data", "data", "data",
+      "data", "data",
       "data", "data", "data",
       "data", "data", "data",
       "data", "data", "data"
@@ -283,25 +314,30 @@ board <- new_dock_board(
     blockr.dag::new_dag_extension()
   ),
 
-  layout = dock_layouts(
-    Setup = dock_view(
+  layouts = list(
+    Setup = dock_layout(
       "cap_read", "mod_read", "tp_read", "data", "dag_extension",
-      active = TRUE
+      name = "Setup"
     ),
-    `Capital position` = dock_view(
+    CapitalPosition = dock_layout(
       "global_filter",
-      "cap_pull", "cap_sum", "cap_ratio", "cap_kpi", "cap_wf"
+      "cap_pull", "cap_sum", "cap_ratio", "cap_kpi_sum", "cap_kpi",
+      "cap_wf_long", "cap_wf",
+      name = "Capital position"
     ),
-    `SCR modules` = dock_view(
+    SCRModules = dock_layout(
       "global_filter",
-      "mod_pull", "mod_sum", "mod_drill"
+      "mod_pull", "mod_sum", "mod_drill",
+      name = "SCR modules"
     ),
-    `Technical provisions` = dock_view(
+    TechnicalProvisions = dock_layout(
       "global_filter",
       "tp_pull", "tp_sum", "tp_drill",
-      "tp_trend_pull", "tp_trend_sum", "tp_trend_drill"
+      "tp_trend_pull", "tp_trend_sum", "tp_trend_drill",
+      name = "Technical provisions"
     )
-  )
+  ),
+  active = "Setup"
 )
 
 serve(board, plugins = custom_plugins(manage_project()))

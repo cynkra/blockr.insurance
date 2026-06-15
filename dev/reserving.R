@@ -1,10 +1,9 @@
 # Motor reserving review POC — visualize the development triangle, derive
 # age-to-age factors, project ultimate.
 #
-# Run from an R session:
+# Run from an R session at the workspace root:
 #
-#   pkgload::load_all("blockr.insurance")
-#   source(system.file("examples", "reserving.R", package = "blockr.insurance"))
+#   source("blockr.insurance/dev/reserving.R")
 #
 # Four workspaces (Setup / Triangle / Development factors / Ultimate)
 # operate on the bundled `motor_losses` dataset, where each row has fully
@@ -37,7 +36,7 @@ pkgload::load_all("blockr.io")
 pkgload::load_all("blockr.sandbox")
 pkgload::load_all("blockr.extra")
 pkgload::load_all("blockr.viz")
-pkgload::load_all("blockr.echarts")
+library(blockr.echarts)
 pkgload::load_all("blockr.session")
 pkgload::load_all("blockr.dag")
 
@@ -47,14 +46,12 @@ pkgload::load_all("blockr.dag")
 sum_dy <- function(by = "Year",
                    block_name = "Sum DY0..DY15") {
   new_summarize_block(
-    state = list(
-      summaries = lapply(0:15, function(i) {
-        list(type = "expr",
-             name = paste0("DY", i),
-             expr = sprintf("sum(DY%d, na.rm = TRUE)", i))
-      }),
-      by = by
-    ),
+    summaries = lapply(0:15, function(i) {
+      list(type = "expr",
+           name = paste0("DY", i),
+           expr = sprintf("sum(DY%d, na.rm = TRUE)", i))
+    }),
+    by = by,
     block_name = block_name
   )
 }
@@ -86,25 +83,21 @@ board <- new_dock_board(
     tri_sum = sum_dy(by = "Year",
       block_name = "Triangle: sum DY0..DY15 by origin Year"),
     tri_long = new_pivot_longer_block(
-      state = list(
-        cols = paste0("DY", 0:15),
-        names_to = "dev_period",
-        values_to = "cumulative_paid",
-        values_drop_na = FALSE,
-        names_prefix = ""
-      ),
+      cols = paste0("DY", 0:15),
+      names_to = "dev_period",
+      values_to = "cumulative_paid",
+      values_drop_na = FALSE,
+      names_prefix = "",
       block_name = "Reshape wide -> long (Year x DY)"
     ),
     tri_mutate = new_mutate_block(
-      state = list(
-        mutations = list(
-          list(name = "dev_year",
-               expr = "as.integer(sub('^DY', '', dev_period))"),
-          list(name = "origin_year",
-               expr = "as.character(Year)")
-        ),
-        by = list()
+      mutations = list(
+        list(name = "dev_year",
+             expr = "as.integer(sub('^DY', '', dev_period))"),
+        list(name = "origin_year",
+             expr = "as.character(Year)")
       ),
+      by = list(),
       block_name = "Add dev_year (int) + origin_year (chr)"
     ),
     tri_heatmap = new_echart_heatmap_block(
@@ -121,38 +114,32 @@ board <- new_dock_board(
     df_sum = sum_dy(by = list(),
       block_name = "Grand-total triangle (single row)"),
     df_factors = new_mutate_block(
-      state = list(
-        mutations = lapply(0:14, function(k) {
-          list(
-            name = sprintf("f_%02d_to_%02d", k, k + 1),
-            expr = sprintf("DY%d / DY%d", k + 1, k)
-          )
-        }),
-        by = list()
-      ),
+      mutations = lapply(0:14, function(k) {
+        list(
+          name = sprintf("f_%02d_to_%02d", k, k + 1),
+          expr = sprintf("DY%d / DY%d", k + 1, k)
+        )
+      }),
+      by = list(),
       block_name = "Age-to-age factors (volume weighted)"
     ),
     df_select = new_select_block(
-      state = list(
-        columns = sprintf("f_%02d_to_%02d", 0:14, 1:15),
-        exclude = FALSE,
-        distinct = FALSE
-      ),
+      columns = sprintf("f_%02d_to_%02d", 0:14, 1:15),
+      exclude = FALSE,
+      distinct = FALSE,
       block_name = "Keep factor columns only"
     ),
     df_long = new_pivot_longer_block(
-      state = list(
-        cols = sprintf("f_%02d_to_%02d", 0:14, 1:15),
-        names_to = "dev_step",
-        values_to = "factor",
-        values_drop_na = FALSE,
-        names_prefix = ""
-      ),
+      cols = sprintf("f_%02d_to_%02d", 0:14, 1:15),
+      names_to = "dev_step",
+      values_to = "factor",
+      values_drop_na = FALSE,
+      names_prefix = "",
       block_name = "Reshape factors -> long"
     ),
     df_chart = new_chart_block(
       chart_type = "bar",
-      group_by   = "dev_step",
+      group   = "dev_step",
       metric     = "factor",
       agg_fn     = "sum",
       block_name = "Age-to-age factors chart"
@@ -164,31 +151,34 @@ board <- new_dock_board(
     ult_sum = sum_dy(by = "Year",
       block_name = "Sum DY0..DY15 by origin Year"),
     ult_mutate = new_mutate_block(
-      state = list(
-        mutations = list(
-          list(name = "Paid_DY0",         expr = "DY0"),
-          list(name = "Paid_to_date",     expr = "DY15"),
-          list(name = "Development_factor",
-               expr = "DY15 / DY0"),
-          # Implied IBNR if we'd only seen DY0 (synthetic — for demo).
-          list(name = "Implied_IBNR_from_DY0",
-               expr = "DY15 - DY0")
-        ),
-        by = list()
+      mutations = list(
+        list(name = "Paid_DY0",         expr = "DY0"),
+        list(name = "Paid_to_date",     expr = "DY15"),
+        list(name = "Development_factor",
+             expr = "DY15 / DY0"),
+        # Implied IBNR if we'd only seen DY0 (synthetic — for demo).
+        list(name = "Implied_IBNR_from_DY0",
+             expr = "DY15 - DY0")
       ),
+      by = list(),
       block_name = "Per-year development metrics"
     ),
-    ult_kpi = new_tile_block(
-      showcase = "number",
-      state = list(
-        aesthetics = list(value = c("Paid_to_date",
-                                    "Implied_IBNR_from_DY0")),
-        stats = list(value = "sum"),
-        formats = list(measure_labels = c(
-          Paid_to_date          = "Total paid to date",
-          Implied_IBNR_from_DY0 = "Loss emergence post-DY0"
-        ))
+    # The tile block is a pure renderer (it no longer aggregates), so the
+    # reserving totals are summed upstream into a one-row frame whose column
+    # names are the card labels; the tile then renders them as KPI cards.
+    ult_kpi_sum = new_summarize_block(
+      summaries = list(
+        list(type = "expr", name = "Total paid to date",
+             expr = "sum(Paid_to_date, na.rm = TRUE)"),
+        list(type = "expr", name = "Loss emergence post-DY0",
+             expr = "sum(Implied_IBNR_from_DY0, na.rm = TRUE)")
       ),
+      by = character(),
+      block_name = "Reserving totals"
+    ),
+    ult_kpi = new_tile_block(
+      value = c("Total paid to date", "Loss emergence post-DY0"),
+      format = "compact",
       block_name = "Reserving KPIs"
     ),
     ult_table = new_summary_table_block(
@@ -206,19 +196,22 @@ board <- new_dock_board(
       "loss_read", "data",
       "global_filter", "tri_pull", "tri_sum", "tri_long", "tri_mutate",
       "global_filter", "df_pull", "df_sum", "df_factors", "df_select", "df_long",
-      "global_filter", "ult_pull", "ult_sum", "ult_mutate", "ult_mutate"
+      "global_filter", "ult_pull", "ult_sum", "ult_mutate", "ult_mutate",
+      "ult_kpi_sum"
     ),
     to = c(
       "data", "global_filter",
       "tri_pull", "tri_sum", "tri_long", "tri_mutate", "tri_heatmap",
       "df_pull", "df_sum", "df_factors", "df_select", "df_long", "df_chart",
-      "ult_pull", "ult_sum", "ult_mutate", "ult_kpi", "ult_table"
+      "ult_pull", "ult_sum", "ult_mutate", "ult_kpi_sum", "ult_table",
+      "ult_kpi"
     ),
     input = c(
       "loss", "data",
       "data", "data", "data", "data", "data",
       "data", "data", "data", "data", "data", "data",
-      "data", "data", "data", "data", "data"
+      "data", "data", "data", "data", "data",
+      "data"
     )
   ),
 
@@ -226,24 +219,28 @@ board <- new_dock_board(
     blockr.dag::new_dag_extension()
   ),
 
-  layout = dock_layouts(
-    Setup = dock_view(
+  layouts = list(
+    Setup = dock_layout(
       "loss_read", "data", "dag_extension",
-      active = TRUE
+      name = "Setup"
     ),
-    Triangle = dock_view(
+    Triangle = dock_layout(
       "global_filter",
-      "tri_pull", "tri_sum", "tri_long", "tri_mutate", "tri_heatmap"
+      "tri_pull", "tri_sum", "tri_long", "tri_mutate", "tri_heatmap",
+      name = "Triangle"
     ),
-    `Dev factors` = dock_view(
+    Dev_factors = dock_layout(
       "global_filter",
-      "df_pull", "df_sum", "df_factors", "df_select", "df_long", "df_chart"
+      "df_pull", "df_sum", "df_factors", "df_select", "df_long", "df_chart",
+      name = "Dev factors"
     ),
-    Ultimate = dock_view(
+    Ultimate = dock_layout(
       "global_filter",
-      "ult_pull", "ult_sum", "ult_mutate", "ult_kpi", "ult_table"
+      "ult_pull", "ult_sum", "ult_mutate", "ult_kpi_sum", "ult_kpi", "ult_table",
+      name = "Ultimate"
     )
-  )
+  ),
+  active = "Setup"
 )
 
 serve(board, plugins = custom_plugins(manage_project()))

@@ -1,9 +1,8 @@
 # Insurance POC — multi-page motor-insurance dashboard.
 #
-# Run from an R session after installing blockr.insurance:
+# Run from an R session at the workspace root:
 #
-#   library(blockr.insurance)
-#   source(system.file("examples", "motor.R", package = "blockr.insurance"))
+#   source("blockr.insurance/dev/motor.R")
 #
 # Five workspaces (Setup / Portfolio / Profitability / Claims / Reserving)
 # operate on the bundled `motor_portfolio` and `motor_losses` datasets. The
@@ -63,35 +62,37 @@ board <- new_dock_board(
     ov_pull = new_dm_pull_block(table = "profiles",
       block_name = "Pull profiles"),
     ov_nonzero = new_filter_block(
-      state = list(
-        conditions = list(list(type = "expr", expr = "Vehicles > 0")),
-        operator = "&"
-      ),
+      conditions = list(list(type = "expr", expr = "Vehicles > 0")),
+      operator = "&",
       block_name = "Drop empty cells"
     ),
     ov_avg = new_mutate_block(
-      state = list(
-        mutations = list(list(name = "Avg_Premium", expr = "Premium / Vehicles")),
-        by = list()
-      ),
+      mutations = list(list(name = "Avg_Premium", expr = "Premium / Vehicles")),
+      by = list(),
       block_name = "Avg_Premium = Premium / Vehicles"
     ),
-    ov_kpi = new_tile_block(
-      showcase = "number",
-      state = list(
-        aesthetics = list(value = c("Premium", "Vehicles")),
-        stats = list(value = "sum"),
-        formats = list(measure_labels = c(
-          Premium  = "Total Premium",
-          Vehicles = "Total Vehicles"
-        ))
+    # The tile block is a pure renderer (it no longer aggregates), so the
+    # portfolio totals are summed upstream into a one-row frame whose column
+    # names are the card labels; the tile then renders them as KPI cards.
+    ov_kpi_sum = new_summarize_block(
+      summaries = list(
+        list(type = "expr", name = "Total Premium",
+             expr = "sum(Premium, na.rm = TRUE)"),
+        list(type = "expr", name = "Total Vehicles",
+             expr = "sum(Vehicles, na.rm = TRUE)")
       ),
+      by = character(),
+      block_name = "Portfolio totals"
+    ),
+    ov_kpi = new_tile_block(
+      value = c("Total Premium", "Total Vehicles"),
+      format = "compact",
       block_name = "Portfolio KPIs"
     ),
     ov_drill = new_chart_block(
       chart_type = "bar",
-      group_by = "Vehicle_type",
-      color_by = "Cover",
+      group = "Vehicle_type",
+      color = "Cover",
       metric = "Premium",
       agg_fn = "sum",
       block_name = "Premium by Vehicle Type x Cover"
@@ -107,38 +108,32 @@ board <- new_dock_board(
     prof_premium_pull = new_dm_pull_block(table = "profiles",
       block_name = "Pull profiles"),
     prof_premium_sum = new_summarize_block(
-      state = list(
-        summaries = list(
-          list(type = "expr", name = "Total_Premium",
-               expr = "sum(Premium, na.rm = TRUE)"),
-          list(type = "expr", name = "Total_Vehicles",
-               expr = "sum(Vehicles, na.rm = TRUE)")
-        ),
-        by = c("Year", "Insurance_Company")
+      summaries = list(
+        list(type = "expr", name = "Total_Premium",
+             expr = "sum(Premium, na.rm = TRUE)"),
+        list(type = "expr", name = "Total_Vehicles",
+             expr = "sum(Vehicles, na.rm = TRUE)")
       ),
+      by = c("Year", "Insurance_Company"),
       block_name = "Premium by Year x Company"
     ),
     prof_nonzero = new_filter_block(
-      state = list(
-        conditions = list(list(type = "expr",
-                                expr = "Total_Premium > 0")),
-        operator = "&"
-      ),
+      conditions = list(list(type = "expr",
+                              expr = "Total_Premium > 0")),
+      operator = "&",
       block_name = "Drop empty insurer-years"
     ),
     prof_year_chr = new_mutate_block(
-      state = list(
-        mutations = list(list(name = "Year",
-                              expr = "as.character(Year)")),
-        by = list()
-      ),
+      mutations = list(list(name = "Year",
+                            expr = "as.character(Year)")),
+      by = list(),
       block_name = "Year -> character (categorical X axis)"
     ),
     prof_drill = new_chart_block(
       chart_type = "line",
-      x_col = "Year",
-      y_col = "Total_Premium",
-      series_by = "Insurance_Company",
+      x = "Year",
+      y = "Total_Premium",
+      series = "Insurance_Company",
       block_name = "Premium over time, per insurer"
     ),
 
@@ -146,17 +141,15 @@ board <- new_dock_board(
     claims_pull = new_dm_pull_block(table = "loss",
       block_name = "Pull loss"),
     claims_filter = new_filter_block(
-      state = list(
-        conditions = list(list(type = "expr",
-                                expr = "Latest > 10000")),
-        operator = "&"
-      ),
+      conditions = list(list(type = "expr",
+                              expr = "Latest > 10000")),
+      operator = "&",
       block_name = "Large claims (Latest > 10K)"
     ),
     claims_drill = new_chart_block(
       chart_type = "bar",
-      group_by = "Year",
-      color_by = "Vehicle_type",
+      group = "Year",
+      color = "Vehicle_type",
       metric = "Latest",
       agg_fn = "sum",
       block_name = "Large claims by Year x Vehicle Type"
@@ -166,22 +159,18 @@ board <- new_dock_board(
     tri_pull = new_dm_pull_block(table = "loss",
       block_name = "Pull loss"),
     tri_select = new_select_block(
-      state = list(
-        columns = c("Year", paste0("DY", 0:15)),
-        exclude = FALSE,
-        distinct = FALSE
-      ),
+      columns = c("Year", paste0("DY", 0:15)),
+      exclude = FALSE,
+      distinct = FALSE,
       block_name = "Select triangle columns"
     ),
     tri_summary = new_summarize_block(
-      state = list(
-        summaries = lapply(0:15, function(i) {
-          list(type = "expr",
-               name = paste0("DY", i),
-               expr = sprintf("sum(DY%d, na.rm = TRUE)", i))
-        }),
-        by = "Year"
-      ),
+      summaries = lapply(0:15, function(i) {
+        list(type = "expr",
+             name = paste0("DY", i),
+             expr = sprintf("sum(DY%d, na.rm = TRUE)", i))
+      }),
+      by = "Year",
       block_name = "Development triangle (Year x DY)"
     )
     # NOTE: a fancier renderer (gt with triangle styling) is a v1.5 task —
@@ -192,7 +181,7 @@ board <- new_dock_board(
   links = links(
     from = c(
       "profiles_read", "loss_read", "data",
-      "global_filter", "ov_pull", "ov_nonzero", "ov_avg", "ov_avg",
+      "global_filter", "ov_pull", "ov_nonzero", "ov_avg", "ov_avg", "ov_kpi_sum",
       "global_filter", "prof_premium_pull", "prof_premium_sum",
       "prof_nonzero", "prof_year_chr",
       "global_filter", "claims_pull", "claims_filter",
@@ -200,7 +189,7 @@ board <- new_dock_board(
     ),
     to = c(
       "data", "data", "global_filter",
-      "ov_pull", "ov_nonzero", "ov_avg", "ov_kpi", "ov_drill",
+      "ov_pull", "ov_nonzero", "ov_avg", "ov_kpi_sum", "ov_drill", "ov_kpi",
       "prof_premium_pull", "prof_premium_sum", "prof_nonzero",
       "prof_year_chr", "prof_drill",
       "claims_pull", "claims_filter", "claims_drill",
@@ -208,7 +197,7 @@ board <- new_dock_board(
     ),
     input = c(
       "profiles", "loss", "data",
-      "data", "data", "data", "data", "data",
+      "data", "data", "data", "data", "data", "data",
       "data", "data", "data", "data", "data",
       "data", "data", "data",
       "data", "data", "data"
@@ -219,27 +208,32 @@ board <- new_dock_board(
     blockr.dag::new_dag_extension()
   ),
 
-  layout = dock_layouts(
-    Setup = dock_view(
+  layouts = list(
+    Setup = dock_layout(
       "profiles_read", "loss_read", "data", "dag_extension",
-      active = TRUE
+      name = "Setup"
     ),
-    Portfolio = dock_view(
+    Portfolio = dock_layout(
       "global_filter", "ov_pull", "ov_nonzero", "ov_avg",
-      "ov_kpi", "ov_drill"
+      "ov_kpi_sum", "ov_kpi", "ov_drill",
+      name = "Portfolio"
     ),
-    Profitability = dock_view(
+    Profitability = dock_layout(
       "global_filter",
       "prof_premium_pull", "prof_premium_sum", "prof_nonzero",
-      "prof_year_chr", "prof_drill"
+      "prof_year_chr", "prof_drill",
+      name = "Profitability"
     ),
-    Claims = dock_view(
-      "global_filter", "claims_pull", "claims_filter", "claims_drill"
+    Claims = dock_layout(
+      "global_filter", "claims_pull", "claims_filter", "claims_drill",
+      name = "Claims"
     ),
-    Reserving = dock_view(
-      "global_filter", "tri_pull", "tri_select", "tri_summary"
+    Reserving = dock_layout(
+      "global_filter", "tri_pull", "tri_select", "tri_summary",
+      name = "Reserving"
     )
-  )
+  ),
+  active = "Setup"
 )
 
 serve(board, plugins = custom_plugins(manage_project()))
