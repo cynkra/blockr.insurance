@@ -122,7 +122,7 @@ board_blocks <- c(
     treaty_read = new_read_block(
       path = treaty_csv, source = "path",
       block_name = "Upload tower (CSV)"),
-    treaty_tower = blockr.input::new_grid_entry_block(
+    treaty_tower = blockr.input::new_grid_edit_block(
       state = list(key_col = "layer_id"),
       block_name = "Treaty tower"),
 
@@ -362,7 +362,7 @@ board_blocks <- c(
     challenger_read = new_read_block(
       path = treaty_csv, source = "path",
       block_name = "Upload challenger (CSV)"),
-    challenger_tower = blockr.input::new_grid_entry_block(
+    challenger_tower = blockr.input::new_grid_edit_block(
       state = list(key_col = "layer_id"),
       block_name = "Challenger"),
     chal_apply_structure = blockr.extra::new_function_xy_block(
