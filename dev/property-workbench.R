@@ -95,7 +95,7 @@ board <- new_dock_board(
     ),
 
     # === BASE RUN — engine + params + price + premium ===
-    base_grid = new_grid_block(
+    base_grid = new_grid_entry_block(
       state      = list(key_col = "country"),
       block_name = "Base rates"
     ),
@@ -115,7 +115,7 @@ board <- new_dock_board(
 
 
     # === CHALLENGER RUN — symmetric, defaults to v2 engine ===
-    chal_grid = new_grid_block(
+    chal_grid = new_grid_entry_block(
       state      = list(key_col = "country"),
       block_name = "Challenger rates"
     ),

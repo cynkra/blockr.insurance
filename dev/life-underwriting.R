@@ -88,7 +88,7 @@ board <- new_dock_board(
       source     = "path",
       block_name = "Employees census (upload)"
     ),
-    employees_edit = new_grid_block(
+    employees_edit = new_grid_entry_block(
       state = list(key_col = "person_id"),
       block_name = "Tweak employees"
     ),
@@ -108,7 +108,7 @@ board <- new_dock_board(
       source     = "path",
       block_name = "Claims experience (upload)"
     ),
-    claims_edit = new_grid_block(
+    claims_edit = new_grid_entry_block(
       state = list(key_col = "claim_id"),
       block_name = "Tweak claims"
     ),
@@ -134,7 +134,7 @@ board <- new_dock_board(
     ),
 
     # === UWR EDITING ===
-    uwr_edit = new_grid_block(
+    uwr_edit = new_grid_entry_block(
       state = list(key_col = "coverage_type"),
       block_name = "Underwriter worksheet (per coverage)"
     ),
