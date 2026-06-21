@@ -1,0 +1,5 @@
+layer_id,retention,limit,agg_retention,agg_limit,expected_loss
+1,1,1,5,30,6
+2,2,3,0,30,3
+3,5,5,0,50,2
+4,10,15,0,50,1
