@@ -42,6 +42,7 @@ pkgload::load_all("blockr.dplyr")
 pkgload::load_all("blockr.input")
 pkgload::load_all("blockr.extra")
 pkgload::load_all("blockr.viz")
+pkgload::load_all("blockr.session")
 pkgload::load_all("blockr.insurance")
 
 stopifnot(requireNamespace("Pareto", quietly = TRUE))
@@ -74,12 +75,12 @@ board <- new_dock_board(
     # === TOWERS ===
     calibration_seed = new_static_block(calibration_seed,
       block_name = "Loss model seed"),
-    calibration_tower = blockr.input::new_grid_block(
+    calibration_tower = blockr.input::new_grid_entry_block(
       state = list(key_col = "layer_id"),
       block_name = "Loss model (expected losses)"),
     structure_seed = new_static_block(structure_seed,
       block_name = "Structure seed"),
-    structure_tower = blockr.input::new_grid_block(
+    structure_tower = blockr.input::new_grid_entry_block(
       state = list(key_col = "layer_id"),
       block_name = "Treaty structure"),
 
@@ -331,4 +332,4 @@ board <- new_dock_board(
   active = "Quote"
 )
 
-serve(board)
+serve(board, plugins = custom_plugins(manage_project()))
