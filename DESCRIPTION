@@ -44,6 +44,7 @@ Imports:
 Suggests:
     insuranceData,
     ChainLadder,
+    blockr.ui,
     blockr.dock,
     blockr.dm,
     blockr.dplyr,
@@ -53,6 +54,9 @@ Suggests:
     blockr.session,
     blockr.sandbox,
     blockr.extra,
+    blockr.input,
+    blockr.code,
+    Pareto,
     testthat (>= 3.0.0)
 Config/testthat/edition: 3
 LazyData: true
