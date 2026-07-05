@@ -40,6 +40,6 @@ workflow JSON and loses the data-frame shape on deserialization).
 Built by \code{data-raw/build_property.R}.
 }
 \seealso{
-\link{property_params}, \code{\link[=new_price_block]{new_price_block()}}.
+\link{property_params}, \code{new_price_block()}.
 }
 \keyword{datasets}

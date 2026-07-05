@@ -26,10 +26,10 @@ property_locations
 }
 \description{
 Twenty insured locations, used as the \code{locations} input table to
-\code{\link[=engine_property]{engine_property()}} in the property pricing example. Synthetic and
+\code{engine_property()} in the property pricing example. Synthetic and
 deterministic; built by \code{data-raw/build_property.R} with \code{set.seed(1)}.
 }
 \seealso{
-\link{property_claims}, \link{property_params}, \code{\link[=engine_property]{engine_property()}}.
+\link{property_claims}, \link{property_params}, \code{engine_property()}.
 }
 \keyword{datasets}

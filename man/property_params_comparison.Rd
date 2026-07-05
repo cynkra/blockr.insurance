@@ -18,6 +18,6 @@ so the resulting per-location diff is non-zero (and concentrated in
 Italian locations). Built by \code{data-raw/build_property.R}.
 }
 \seealso{
-\link{property_params}, \code{\link[=engine_property]{engine_property()}}.
+\link{property_params}, \code{engine_property()}.
 }
 \keyword{datasets}

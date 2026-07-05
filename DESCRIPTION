@@ -1,6 +1,6 @@
 Package: blockr.insurance
 Title: Insurance Datasets and Example Workflows for Blockr
-Version: 0.0.5
+Version: 0.0.6
 Authors@R: c(
     person(given = "Christoph",
            family = "Sax",
@@ -17,33 +17,23 @@ Authors@R: c(
     person(given = "Antoine",
            family = "Fabri",
            role = "aut"))
-Description: Bundles a synthesised motor-insurance portfolio
-    ('motor_portfolio') and matching loss-development cube ('motor_losses'),
-    plus a multi-page 'blockr' example workflow that uses them. The
-    underlying data is derived from 'insuranceData::dataCar' (de Jong &
-    Heller, 2008) and 'ChainLadder::MW2014' (Wuthrich & Merz, 2014); a
-    multi-insurer / multi-year dimension is synthesised on top so the
-    example can demonstrate cross-filtering, KPIs, drilldowns, and a
-    development triangle.
+Description: Bundles synthesised insurance datasets (a motor-insurance
+    portfolio and loss-development cube, plus property and life reference
+    tables) together with a self-contained 'blockr' example workflow: a
+    simulation-based excess-of-loss treaty pricer built entirely from the
+    general blockr block set. The motor data is derived from
+    'insuranceData::dataCar' (de Jong & Heller, 2008) and
+    'ChainLadder::MW2014' (Wuthrich & Merz, 2014).
 License: GPL (>= 3)
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
 RoxygenNote: 7.3.3
 Depends:
     R (>= 4.0)
-Imports:
-    blockr.core,
-    blockr.dplyr,
-    dm,
-    dplyr,
-    htmltools,
-    jsonlite,
-    shiny,
-    rlang,
-    stats
 Suggests:
     insuranceData,
     ChainLadder,
+    blockr.core,
     blockr.ui,
     blockr.dock,
     blockr.dm,
@@ -56,7 +46,5 @@ Suggests:
     blockr.extra,
     blockr.input,
     blockr.code,
-    Pareto,
-    testthat (>= 3.0.0)
-Config/testthat/edition: 3
+    Pareto
 LazyData: true
