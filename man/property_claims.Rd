@@ -19,10 +19,10 @@ property_claims
 }
 \description{
 Fifteen historical claims spanning 2020–2024, used as the \code{claims} input
-table to \code{engine_property()}. Synthetic; built by
+table to \code{\link[=engine_property]{engine_property()}}. Synthetic; built by
 \code{data-raw/build_property.R} with \code{set.seed(1)}.
 }
 \seealso{
-\link{property_locations}, \link{property_params}, \code{engine_property()}.
+\link{property_locations}, \link{property_params}, \code{\link[=engine_property]{engine_property()}}.
 }
 \keyword{datasets}

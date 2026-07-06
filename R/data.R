@@ -140,7 +140,7 @@
 #' Property locations — minimal pricing-engine input
 #'
 #' Twenty insured locations, used as the `locations` input table to
-#' `engine_property()` in the property pricing example. Synthetic and
+#' [engine_property()] in the property pricing example. Synthetic and
 #' deterministic; built by `data-raw/build_property.R` with `set.seed(1)`.
 #'
 #' @format A data frame with 20 rows and 8 columns:
@@ -159,7 +159,7 @@
 #'   \item{limit}{numeric; per-loss limit.}
 #' }
 #'
-#' @seealso [property_claims], [property_params], `engine_property()`.
+#' @seealso [property_claims], [property_params], [engine_property()].
 #' @keywords datasets
 "property_locations"
 
@@ -167,7 +167,7 @@
 #' Property claims — minimal pricing-engine input
 #'
 #' Fifteen historical claims spanning 2020–2024, used as the `claims` input
-#' table to `engine_property()`. Synthetic; built by
+#' table to [engine_property()]. Synthetic; built by
 #' `data-raw/build_property.R` with `set.seed(1)`.
 #'
 #' @format A data frame with 15 rows and 5 columns:
@@ -179,15 +179,15 @@
 #'   \item{outstanding}{numeric; case reserve.}
 #' }
 #'
-#' @seealso [property_locations], [property_params], `engine_property()`.
+#' @seealso [property_locations], [property_params], [engine_property()].
 #' @keywords datasets
 "property_claims"
 
 
 #' Property pricing parameters — defaults for `engine_property()`
 #'
-#' Named list of parameter tables consumed by `engine_property()` and
-#' `engine_property_v2()`. Built by `data-raw/build_property.R`.
+#' Named list of parameter tables consumed by [engine_property()] and
+#' [engine_property_v2()]. Built by `data-raw/build_property.R`.
 #'
 #' @format A list with four data frames:
 #' \describe{
@@ -196,16 +196,16 @@
 #'   \item{base_rate}{`country` x `base_rate`; per-country base rate
 #'     (premium per unit of TIV).}
 #'   \item{cat_factor}{`country` x `cat_factor`; per-country natural-
-#'     catastrophe loading. Consumed by `engine_property_v2()` only;
-#'     `engine_property()` (v1) ignores it. Loadings reflect typical
+#'     catastrophe loading. Consumed by [engine_property_v2()] only;
+#'     [engine_property()] (v1) ignores it. Loadings reflect typical
 #'     property-line CAT exposure (Italy earthquake, UK flood, France
 #'     storm), with Germany as the unloaded baseline.}
 #'   \item{expenses}{`producing_country` x `expenses_factor`; expense
 #'     loading applied to risk premium.}
 #' }
 #'
-#' @seealso [property_locations], [property_claims], `engine_property()`,
-#'   `engine_property_v2()`, [property_params_comparison].
+#' @seealso [property_locations], [property_claims], [engine_property()],
+#'   [engine_property_v2()], [property_params_comparison].
 #' @keywords datasets
 "property_params"
 
@@ -222,7 +222,7 @@
 #' Built by `data-raw/build_property.R`.
 #'
 #' @format Data frames. See [property_params] for shapes.
-#' @seealso [property_params], `new_price_block()`.
+#' @seealso [property_params], [new_price_block()].
 #' @name property_param_tables
 #' @keywords datasets
 NULL
@@ -250,7 +250,7 @@ NULL
 #'
 #' @format A list with the same three data frames as [property_params].
 #'
-#' @seealso [property_params], `engine_property()`.
+#' @seealso [property_params], [engine_property()].
 #' @keywords datasets
 "property_params_comparison"
 

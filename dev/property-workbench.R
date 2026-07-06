@@ -307,26 +307,39 @@ board <- new_dock_board(
   #      reachable here too so the user can switch between portfolio and
   #      single-policy without leaving the tab. Works at any scope since
   #      policy_picker filters upstream.
+  # Nested column/row layouts (matching dev/json/Actuarial_Workbench.json).
+  # Each tab is a horizontal split into columns; group() stacks blocks
+  # vertically within a column; panels() puts two blocks on one tabbed
+  # panel. Upstream plumbing (portfolio_inputs, base_premium, the *_sum and
+  # *_wf_long helpers) is left out of the layouts so it stays hidden.
   layouts = list(
+    # Engine selection — two columns. Left: Scope over the Base engine.
+    # Right (wide): the Base rate grid over the price build-up waterfall,
+    # so a rate edit and its effect sit one above the other.
     Engine_selection = dock_layout(
-      "portfolio_inputs",
-      "policy_picker",
-      "base_grid", "base_price",
-      "policy_waterfall",
-      "base_premium",
+      group("policy_picker", "base_price",       sizes = c(1, 2.8)),
+      group("base_grid",     "policy_waterfall", sizes = c(1, 1)),
+      sizes = c(1, 3.4),
       name = "Engine selection"
     ),
+    # Analysis — three columns. Left (narrow): crossfilter over the KPI
+    # tile. Middle: the two drilldown bars stacked. Right: scatter and
+    # waterfall sharing one tabbed panel for single-policy drill-in.
     Analysis = dock_layout(
-      "analysis_xfilter",
-      "portfolio_kpi_sum", "portfolio_kpi",
-      "portfolio_drill_country", "portfolio_drill_peril",
-      "policy_scatter", "policy_waterfall",
+      group("analysis_xfilter",        "portfolio_kpi",         sizes = c(1.9, 1)),
+      group("portfolio_drill_country", "portfolio_drill_peril", sizes = c(1, 1.1)),
+      panels("policy_scatter", "policy_waterfall"),
+      sizes = c(1, 2.9, 2.3),
       name = "Analysis"
     ),
+    # Compare — three columns. Left: Scope over the diff crossfilter.
+    # Middle: Challenger engine over its rate grid. Right: the diff
+    # waterfall and Challenger premium sharing a tabbed panel.
     Compare = dock_layout(
-      "policy_picker",
-      "chal_grid", "chal_price", "chal_premium",
-      "compare_portfolio_xfilter", "compare_portfolio_waterfall",
+      group("policy_picker", "compare_portfolio_xfilter", sizes = c(1, 3.3)),
+      group("chal_price",    "chal_grid",                 sizes = c(1, 3.6)),
+      panels("compare_portfolio_waterfall", "chal_premium"),
+      sizes = c(1.5, 1.6, 2.5),
       name = "Compare"
     )
   ),
