@@ -1,4 +1,4 @@
-# Treaty pricer — tower -> fit -> simulate -> structure -> price.
+# Treaty pricer — tower → fit → simulate → structure → price.
 #
 # A simulation-based pricer for a layered excess-of-loss reinsurance treaty.
 # ONE treaty tower drives everything: the client hands over the layer structure
@@ -13,44 +13,78 @@
 # isn't a dplyr verb). Aggregation and pricing are summarize/mutate blocks you
 # can read off the UI; every VIEW is a blockr.viz tile / chart / table.
 #
+# The actuary's inputs, all on the one editable `treaty_tower` grid + one knob:
+#   - expected loss per layer → the `expected_loss` column (judgment). With the
+#     layer `retention`s as attachment points, these calibrate the severity fit.
+#   - the frequency anchor    → the `frequency` field on the `fit` function
+#     block (FQ at the lowest attachment point). The method SOLVES the higher-
+#     layer frequencies, so a single anchor is supplied, not a column — per-
+#     layer frequencies over-determine the match and the αs go degenerate.
+#
 # Screens (left to right, designed so editing a number visibly moves three
 # things at once — that's the demo):
 #   - Pricer (cockpit): the treaty tower + programme KPI tile + a per-layer
 #     QUOTE chart (loss vs technical premium, grouped bars) + a premium BUILD-UP
-#     waterfall. Edit a layer and the KPIs, the quote and the waterfall recompute.
-#   - Loss model: the fit function block with its fitted alphas; simulate + the
-#     exceedance / return-period curve; the specified-vs-simulated reconciliation.
-#   - Layer detail: click a layer in the bar to break out its annual-loss-
-#     distribution histogram + a scorecard (expected / worst-year / technical).
-#   - Compare: a CHALLENGER structure tower run in parallel on the same simulated
-#     losses, diffed against the base (challenger - base).
+#     waterfall (pure loss → +risk → +expense → +profit → technical). Edit a
+#     layer and the KPIs, the quote and the waterfall recompute live.
+#   - Loss model: the fit function block grouped with its fitted αs (chart +
+#     table) below it; simulate + the exceedance / return-period curve; and the
+#     specified-vs-simulated reconciliation (grouped bar) — the severity-fit and
+#     simulation detail, away from the price view.
+#   - Layer detail: one drill path — click a layer in the bar to break out its
+#     annual-loss-distribution histogram + a scorecard (expected / worst-year /
+#     technical).
+#   - Compare: a CHALLENGER structure tower run in parallel on the same
+#     simulated losses, diffed against the base (challenger − base) as a table
+#     and a per-layer bar. Restructure the challenger → watch the diff move.
 #   - Workflow: the live block graph (blockr.dag), blocks grouped into coloured
 #     STACKS by role so the data flow reads at a glance.
 #
-# Run it from an R session, after installing the packages listed on the
-# Examples page (https://blockr-org.github.io/blockr.site/examples/):
-#
+# Run with:
 #   source(system.file("examples/treaty-pricer.R", package = "blockr.insurance"))
+#
+# Deploy (ShinyProxy app `treaty-pricer`, "Treaty Pricer (Reinsurance)", on
+# hetzner-shinyproxy via blockr.deploy/shinyproxy-hetzner): the deploy copy is a
+# plain cp of THIS file (gallery-manifest.yml drives it). No blockr.assistant
+# (DAG + per-block ai_ctrl + Show-code are the AI surface). All blockr packages
+# on main. ShinyProxy pre-warms isolated instances so demo users get an instant
+# app (seats configured in the manifest).
 
-library(blockr.core)
-library(blockr.ui)
-library(blockr.dock)
-library(blockr.dplyr)
-library(blockr.input)
-library(blockr.extra)
-library(blockr.io)
-library(blockr.viz)
-library(blockr.dag)
-library(blockr.session)
-library(blockr.code)
-library(blockr.insurance)
+# ---- Package loading (dual: installed vs local source) ---------------------
+# `dev_local = FALSE` (the default, and what ships) attaches the INSTALLED
+# packages with library(). Set it to TRUE -- or source this file from the
+# dev/treaty-pricer.R wrapper -- to load every blockr package from its LOCAL
+# source checkout with pkgload::load_all(). One board, two loaders, no drift.
+if (!exists("dev_local")) dev_local <- FALSE
 
-stopifnot(requireNamespace("Pareto", quietly = TRUE))
+blockr_pkgs <- c(
+  "blockr.core",
+  "blockr.ui",
+  "blockr.dock",
+  "blockr.dplyr",
+  "blockr.input",     # the one editable treaty_tower grid (client structure)
+  "blockr.extra",     # function blocks (Pareto fit, per-claim layering)
+  "blockr.io",
+  "blockr.viz",
+  "blockr.dag",
+  "blockr.session",
+  "blockr.code",      # show / export the generated R code
+  "blockr.ai",
+  "blockr.insurance"  # the treaty tower data + this example
+)
+
+for (pkg in blockr_pkgs) {
+  if (dev_local) pkgload::load_all(pkg, quiet = TRUE)
+  else library(pkg, character.only = TRUE)
+}
+
+stopifnot(requireNamespace("Pareto", quietly = TRUE))  # piecewise-Pareto severity fit + loss simulation
 
 options(
   blockr.dock_is_locked = FALSE,
   blockr.lazy_eval      = FALSE,
-  blockr.html_table_preview = TRUE    # nicer HTML data previews in blocks
+  blockr.html_table_preview = TRUE,   # nicer HTML data previews in blocks
+  blockr.ai_model       = "gpt-5.1"   # prod model; needs OPENAI_API_KEY set
 )
 
 # ONE treaty tower, loaded from a CSV bundled in the package (showcasing the
@@ -62,7 +96,7 @@ options(
 # tower), while `limit / retention / agg_*` define the deal applied to the
 # simulated losses. The price is the TECHNICAL PREMIUM the build-up produces —
 # no quoted premium or loss ratio; this is a pricing tool, the premium is the
-# output. Columns are ordered deductible -> cap at each level: per-occurrence
+# output. Columns are ordered deductible → cap at each level: per-occurrence
 # (retention, limit) then annual-aggregate (agg_retention, agg_limit), with the
 # actuary's expected_loss last.
 treaty_csv <- system.file("extdata", "treaty_tower.csv",
@@ -73,12 +107,13 @@ treaty_csv <- system.file("extdata", "treaty_tower.csv",
 # challenger and the diff appears — the cleanest way to show a restructuring.
 
 # The per-claim layering, shared verbatim by the base and challenger runs:
-# per-occurrence layering -> annual total per layer -> annual aggregate (AAD/AAL).
+# per-occurrence layering → annual total per layer → annual aggregate (AAD/AAL).
 # Also carries `layer_loss` (the annual layer loss BEFORE the aggregate) and
 # `specified` (the actuary's input loss pick, when present) so a reconciliation
 # view can check specified vs simulated without a join. The challenger tower has
 # no expected_loss column, so `specified` falls back to NA there (unused).
-layering_fn <- "function(x, y) {
+layering_fn <- "function(...) {
+  args <- list(...); x <- args[[1L]]; y <- args[[2L]]
   do.call(rbind, lapply(seq_len(nrow(y)), function(i) {
     loss   <- pmin(pmax(x$severity - y$retention[i], 0), y$limit[i])
     annual <- tapply(loss, x$year, sum)
@@ -164,7 +199,7 @@ board_blocks <- c(
     # === APPLY STRUCTURE — per-claim layering (the only non-dplyr step) ===
     # y is the treaty tower itself (limit/retention/agg); x is the simulated
     # claims. Same tower that calibrated the fit now prices the deal.
-    apply_structure = blockr.extra::new_function_xy_block(
+    apply_structure = blockr.extra::new_function_var_block(
       fn = layering_fn,
       block_name = "Apply structure"
     ),
@@ -221,7 +256,7 @@ board_blocks <- c(
     # Sum the per-layer build-up to a ONE-ROW programme build-up first, then
     # pivot to long (step, value) and walk it as a waterfall. Summing upstream
     # (rather than leaning on the chart's cross-layer aggregation) gives an
-    # unambiguous programme bridge: pure loss -> +loadings -> technical premium.
+    # unambiguous programme bridge: pure loss → +loadings → technical premium.
     prog_buildup = new_summarize_block(
       summaries = list(
         list(type = "simple", name = "pure_loss",
@@ -260,9 +295,10 @@ board_blocks <- c(
 
     # === LAYER DRILL TARGETS (of the bar) ===
     # Histogram of the selected layer's ANNUAL ceded loss: floor(ceded) bins,
-    # one bar = how many simulated years landed in that band. The spike at 0 =
-    # no-loss years; the long right tail = the bad years the worst-year card
-    # reports.
+    # one bar = how many simulated years landed in that band. Replaces the old
+    # ceded-by-sim-year line (sim years are exchangeable, so that ordering was
+    # meaningless). The spike at 0 = no-loss years; the long right tail = the
+    # bad years that the worst-year card reports.
     layer_hist_bin = new_mutate_block(
       mutations = list(list(name = "ceded_band", expr = "floor(ceded)")),
       by = list(),
@@ -315,7 +351,7 @@ board_blocks <- c(
       block_name = "Exceedance"
     ),
 
-    # === RECONCILIATION — specified vs simulated layer loss ===
+    # === RECONCILIATION — specified vs simulated layer loss (option C) ===
     # Validates the fit: `specified` (the actuary's pick) vs `simulated` (the
     # mean BEFORE-aggregate annual layer loss). They should match up to sampling
     # noise — closer on the thicker low layers, wobblier on the thin top layer.
@@ -352,7 +388,7 @@ board_blocks <- c(
     challenger_tower = blockr.input::new_grid_edit_block(
       state = list(key_col = "layer_id"),
       block_name = "Challenger"),
-    chal_apply_structure = blockr.extra::new_function_xy_block(
+    chal_apply_structure = blockr.extra::new_function_var_block(
       fn = layering_fn,
       block_name = "Apply challenger"
     ),
@@ -369,12 +405,12 @@ board_blocks <- c(
       by = list(),
       block_name = "Challenger price"
     ),
-    # x = challenger, y = base -> diff = challenger - base (negative = cheaper).
+    # x = challenger, y = base → diff = challenger − base (negative = cheaper).
     compare = new_compare_block(
       key_cols     = "layer_id",
       measure_cols = c("expected_loss", "technical_premium"),
       metric       = "diff",
-      block_name   = "Challenger - base (per layer)"
+      block_name   = "Challenger − base (per layer)"
     ),
     compare_table = new_table_block(
       rowname = "layer_id",
@@ -453,7 +489,7 @@ board <- new_dock_board(
     ),
     input = c(
       "data", "data", "data", "data", "data", "data",
-      "x", "y",
+      "1", "2",
       "data", "data",
       "data", "data",
       "data", "data",
@@ -462,7 +498,7 @@ board <- new_dock_board(
       "data", "data",
       "data", "data", "data",
       "data", "data", "data",
-      "data", "x", "y",
+      "data", "1", "2",
       "data", "data",
       "x", "y",
       "data", "data"
@@ -506,12 +542,24 @@ board <- new_dock_board(
 
   # Five screens. The cockpit is the star: edit an expected loss or a structure
   # rate and the fit, the tiles, the quote and the build-up waterfall all move.
+  # Each screen is a GRID (rows of side-by-side panels) rather than one cramped
+  # row — top-level `orientation = "vertical"` stacks the rows; each nested
+  # list splits horizontally.
   layouts = list(
+    # Cockpit: the one treaty tower on top, programme KPI tile in the middle,
+    # the price visuals below. Edit a layer's expected loss / retention / limit
+    # and the KPIs, the quote and the build-up waterfall all move. (The fitted
+    # αs live on the Loss model tab — that's fit detail, not a pricing view.)
+    # Top row, three columns: upload the tower CSV (narrow), tweak it in the grid
+    # (wide), programme KPIs (narrow). The two price charts fill the row below.
     Pricer = dock_layout(
       group("treaty_read", "treaty_tower", "prog_kpi", sizes = c(1, 2.5, 1)),
       list("quote_chart", "price_waterfall"),
       orientation = "vertical", sizes = c(1, 1),
       name = "Pricer"),
+    # Loss model, a 2x2 grid: the Pareto fit (sharing one tabbed panel with its
+    # αs chart + table, fit open) and the simulate block on top; the specified-
+    # vs-simulated reconciliation and the exceedance curve below.
     Loss_model = dock_layout(
       list(
         # Tabs render with the LAST one active, so put `fit` last to open on it.
@@ -521,15 +569,20 @@ board <- new_dock_board(
       list("recon_chart", "exceedance"),
       orientation = "vertical", sizes = c(1, 1),
       name = "Loss model"),
+    # One drill path only: click a layer in the bar -> its loss-distribution
+    # histogram + scorecard.
     Layer_detail = dock_layout(
       "layer_bar", "layer_hist", "layer_detail_tile",
       sizes = c(1.4, 1.4, 1),
       name = "Layer detail"),
+    # Base treaty tower and challenger side by side, with the diff below.
     Compare = dock_layout(
       list("treaty_tower", "challenger_tower"),
       list("compare_table", "compare_bar"),
       orientation = "vertical", sizes = c(1, 1.2),
       name = "Compare"),
+    # Workflow: the live block graph, blocks grouped into coloured STACKS by
+    # role so the data flow reads at a glance.
     Workflow = dock_layout(
       "ext_panel-dag_extension",
       name = "Workflow")
@@ -540,6 +593,7 @@ board <- new_dock_board(
 serve(
   board,
   plugins = custom_plugins(c(
+    ai_ctrl_block(),      # per-block AI support (configure a block by prompt)
     manage_project(),
     generate_flat_code()
   ))
