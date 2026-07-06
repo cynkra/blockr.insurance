@@ -42,6 +42,24 @@
 #
 # Run from an R session at the workspace root:
 #   source("blockr.insurance/dev/treaty-pricer.R")
+#
+# Deploy (ShinyProxy app `treaty-pricer`, "Treaty Pricer (Reinsurance)", on
+# hetzner-shinyproxy via blockr.deploy/shinyproxy-hetzner):
+#   - app file:    apps/treaty-pricer/app.R   (library()-based, not this load_all harness)
+#   - image:       docker/Dockerfile.treaty-pricer
+#   - the deployed board has NO blockr.assistant (dropped); DAG + per-block
+#     ai_ctrl + Show-code are kept.
+#   - THREE branches deviate from main; everything else is main. Pin ALL of them
+#     in the image or transitive deps leave a new pkg skewed against a main
+#     sibling (e.g. new dock vs main dag -> board_server aborts on add_link_action):
+#       blockr.dock @ fix/disable-busy-pulse
+#       blockr.dag  @ fix/relabel-nodes-config-mod-crash
+#       blockr.code @ pipe-fold
+#   - AI MODEL SPLIT: this dev file uses gpt-5.1 (good model for local work);
+#     the deployed app.R uses gpt-5-nano (cheapest tier) so the public demo's
+#     ai-ctrl calls cost almost nothing. Keep them divergent.
+#   - ShinyProxy pre-warms 20 isolated instances (minimum-seats-available: 20,
+#     seats-per-container: 1) so demo users get an instant app.
 
 pkgload::load_all("blockr.core")
 pkgload::load_all("blockr.ui")
@@ -99,7 +117,8 @@ treaty_csv <- system.file("extdata", "treaty_tower.csv",
 # `specified` (the actuary's input loss pick, when present) so a reconciliation
 # view can check specified vs simulated without a join. The challenger tower has
 # no expected_loss column, so `specified` falls back to NA there (unused).
-layering_fn <- "function(x, y) {
+layering_fn <- "function(...) {
+  args <- list(...); x <- args[[1L]]; y <- args[[2L]]
   do.call(rbind, lapply(seq_len(nrow(y)), function(i) {
     loss   <- pmin(pmax(x$severity - y$retention[i], 0), y$limit[i])
     annual <- tapply(loss, x$year, sum)
@@ -185,7 +204,7 @@ board_blocks <- c(
     # === APPLY STRUCTURE — per-claim layering (the only non-dplyr step) ===
     # y is the treaty tower itself (limit/retention/agg); x is the simulated
     # claims. Same tower that calibrated the fit now prices the deal.
-    apply_structure = blockr.extra::new_function_xy_block(
+    apply_structure = blockr.extra::new_function_var_block(
       fn = layering_fn,
       block_name = "Apply structure"
     ),
@@ -374,7 +393,7 @@ board_blocks <- c(
     challenger_tower = blockr.input::new_grid_edit_block(
       state = list(key_col = "layer_id"),
       block_name = "Challenger"),
-    chal_apply_structure = blockr.extra::new_function_xy_block(
+    chal_apply_structure = blockr.extra::new_function_var_block(
       fn = layering_fn,
       block_name = "Apply challenger"
     ),
@@ -475,7 +494,7 @@ board <- new_dock_board(
     ),
     input = c(
       "data", "data", "data", "data", "data", "data",
-      "x", "y",
+      "1", "2",
       "data", "data",
       "data", "data",
       "data", "data",
@@ -484,7 +503,7 @@ board <- new_dock_board(
       "data", "data",
       "data", "data", "data",
       "data", "data", "data",
-      "data", "x", "y",
+      "data", "1", "2",
       "data", "data",
       "x", "y",
       "data", "data"
