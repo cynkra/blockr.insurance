@@ -73,7 +73,6 @@ pkgload::load_all("blockr.dag")
 pkgload::load_all("blockr.session")
 pkgload::load_all("blockr.code")
 pkgload::load_all("blockr.ai")
-pkgload::load_all("blockr.assistant")
 pkgload::load_all("blockr.insurance")
 
 stopifnot(requireNamespace("Pareto", quietly = TRUE))
@@ -82,14 +81,7 @@ options(
   blockr.dock_is_locked = FALSE,
   blockr.lazy_eval      = FALSE,
   blockr.html_table_preview = TRUE,   # nicer HTML data previews in blocks
-  blockr.ai_model       = "gpt-5.1",  # prod model; needs OPENAI_API_KEY set
-  # The assistant's chat client (slide 8 "extend"); prod model.
-  blockr.chat_function = function(system_prompt = NULL, params = NULL) {
-    ellmer::chat_openai(
-      model = "gpt-5.1", system_prompt = system_prompt, echo = "none"
-    )
-  },
-  blockr.assistant_immediate_commit = TRUE
+  blockr.ai_model       = "gpt-5.1"   # prod model; needs OPENAI_API_KEY set
 )
 
 # ONE treaty tower, loaded from a CSV bundled in the package (showcasing the
@@ -542,8 +534,7 @@ board <- new_dock_board(
   ),
 
   extensions = list(
-    dag       = new_dag_extension(),
-    assistant = new_assistant_extension()
+    dag = new_dag_extension()
   ),
 
   # Five screens. The cockpit is the star: edit an expected loss or a structure
@@ -587,11 +578,10 @@ board <- new_dock_board(
       list("compare_table", "compare_bar"),
       orientation = "vertical", sizes = c(1, 1.2),
       name = "Compare"),
-    # Workflow / extend: the live block graph + the assistant side by side, so
-    # you can extend the running board by prompting (slide 8).
+    # Workflow: the live block graph, blocks grouped into coloured STACKS by
+    # role so the data flow reads at a glance.
     Workflow = dock_layout(
-      "ext_panel-assistant_extension", "ext_panel-dag_extension",
-      sizes = c(1, 1.6),
+      "ext_panel-dag_extension",
       name = "Workflow")
   ),
   active = "Pricer"
