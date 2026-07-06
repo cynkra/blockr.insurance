@@ -522,34 +522,59 @@ board <- new_dock_board(
   #
   # Actuarial    — the pipeline guts. Keep visible during dev; in production
   #                drop this `dock_view()` and set blockr.dock_is_locked=TRUE.
+  # Nested, proportioned layouts ported from the original hand-arranged
+  # board (dev/json/UWR.json). `group()` makes a nested branch (orientation
+  # flips at each level, so a group inside a horizontal root stacks
+  # vertically), `sizes` sets the split ratios (raw pixel widths from the
+  # saved board — only the proportions matter), and `panels()` makes a
+  # tabbed leaf. See `?blockr.dock::dock_layout`.
   layouts = list(
+    # Left column: the read block (compact) stacked above the tweak grid
+    # (tall); right half: the overview chart. ~50/50 split.
     Inputs = dock_layout(
-      "employees_read", "employees_edit", "employees_chart",
+      group("employees_read", "employees_edit", sizes = c(292, 726)),
+      "employees_chart",
+      sizes = c(930, 940),
       name = "Inputs"
     ),
     Claims = dock_layout(
-      "claims_read", "claims_edit", "claims_chart",
+      group("claims_read", "claims_edit", sizes = c(298, 720)),
+      "claims_chart",
+      sizes = c(930, 940),
       name = "Claims"
     ),
+    # Three columns: global filter | underwriter worksheet | (portfolio
+    # totals tile stacked above the premium build-up waterfall). The
+    # kpi_totals_sum summarize is an intermediate — kept out of the view.
     Underwrite = dock_layout(
-      "uwr_edit", "global_filter",
-      "kpi_totals_sum", "kpi_totals", "premium_waterfall",
+      "global_filter",
+      "uwr_edit",
+      group("kpi_totals", "premium_waterfall", sizes = c(342, 676)),
+      sizes = c(371, 477, 1011),
       name = "Underwrite"
     ),
+    # Filter on the left, then two tabbed columns of driver charts.
     Analysis = dock_layout(
       "global_filter",
-      "age_chart", "ssm_chart", "cty_chart",
-      "pol_chart", "uw_chart", "preview",
+      panels("age_chart", "cty_chart", "ssm_chart"),
+      panels("pol_chart", "uw_chart", "preview"),
+      sizes = c(350, 689, 821),
       name = "Analysis"
     ),
+    # DAG viewer prominent on the left; the pipeline guts grouped into
+    # three stacked tabbed rows on the right (sources / joins+formula /
+    # premium build-up).
     Actuarial = dock_layout(
-      "coverage_pivot",
-      "j_uw", "j_incidence", "j_country", "j_annuity",
-      "formula", "age_band", "premium_calc",
-      "premium_long", "premium_steps",
-      "uw_factors_src", "incidence_src",
-      "country_src", "annuity_src",
-      "age_calc", "dag_extension",
+      "dag_extension",
+      group(
+        panels("uw_factors_src", "incidence_src",
+               "country_src", "annuity_src"),
+        panels("coverage_pivot", "j_uw", "age_calc", "j_incidence",
+               "j_country", "j_annuity", "formula", "age_band"),
+        panels("premium_calc", "premium_long", "premium_steps"),
+        sizes = c(1, 1, 1)
+      ),
+      sizes = c(656, 1214),
       name = "Actuarial"
     )
   ),
