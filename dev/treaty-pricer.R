@@ -49,12 +49,8 @@
 #   - image:       docker/Dockerfile.treaty-pricer
 #   - the deployed board has NO blockr.assistant (dropped); DAG + per-block
 #     ai_ctrl + Show-code are kept.
-#   - THREE branches deviate from main; everything else is main. Pin ALL of them
-#     in the image or transitive deps leave a new pkg skewed against a main
-#     sibling (e.g. new dock vs main dag -> board_server aborts on add_link_action):
-#       blockr.dock @ fix/disable-busy-pulse
-#       blockr.dag  @ fix/relabel-nodes-config-mod-crash
-#       blockr.code @ pipe-fold
+#   - All blockr packages are on main (no branch pins). This dev harness runs
+#     against your local main checkouts; the deploy uses installed main packages.
 #   - AI MODEL SPLIT: this dev file uses gpt-5.1 (good model for local work);
 #     the deployed app.R uses gpt-5-nano (cheapest tier) so the public demo's
 #     ai-ctrl calls cost almost nothing. Keep them divergent.
