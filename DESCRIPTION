@@ -52,7 +52,6 @@ Suggests:
     blockr.viz,
     blockr.dag,
     blockr.session,
-    blockr.sandbox,
     blockr.extra,
     blockr.input,
     blockr.code,
