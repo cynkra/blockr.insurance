@@ -16,7 +16,7 @@
 options(
   blockr.dock_is_locked    = FALSE,
   blockr.eval_parent_env   = asNamespace("stats"),
-  blockr.html_table_preview = TRUE,
+  blockr.tabular_display = blockr.ui::html_table_display,
   # Dock's hidden-output detection misreports block visibility — without
   # this, blocks stay suspended and panels never render.
   blockr.lazy_eval         = FALSE,

@@ -25,7 +25,7 @@
 options(
   blockr.dock_is_locked       = FALSE,
   blockr.eval_parent_env      = asNamespace("stats"),
-  blockr.html_table_preview   = TRUE,
+  blockr.tabular_display   = blockr.ui::html_table_display,
   blockr.session_url_params   = TRUE,
   blockr.lazy_eval            = FALSE,
   blockr.ai_model             = "gpt-4o-mini"

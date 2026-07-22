@@ -98,7 +98,7 @@ stopifnot(requireNamespace("Pareto", quietly = TRUE))  # piecewise-Pareto severi
 options(
   blockr.dock_is_locked = FALSE,
   blockr.lazy_eval      = FALSE,
-  blockr.html_table_preview = TRUE,   # nicer HTML data previews in blocks
+  blockr.tabular_display = blockr.ui::html_table_display,   # nicer HTML data previews in blocks
   blockr.ai_model       = "gpt-5.1"   # prod model; needs OPENAI_API_KEY set
 )
 
