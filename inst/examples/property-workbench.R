@@ -20,6 +20,11 @@ options(
   # Dock's hidden-output detection misreports block visibility — without
   # this, blocks stay suspended and panels never render.
   blockr.lazy_eval         = FALSE,
+  # Build a block only once it is required, instead of staggering every
+  # off-screen block into existence in the background. This board carries ~27
+  # blocks across three views, so the default pass spends the whole startup
+  # constructing blocks nobody is looking at.
+  blockr.background_construction_delay = Inf,
   blockr.ai_model          = "gpt-4o-mini"
 )
 

@@ -99,6 +99,11 @@ options(
   blockr.dock_is_locked = FALSE,
   blockr.lazy_eval      = FALSE,
   blockr.tabular_display = blockr.ui::html_table_display,   # nicer HTML data previews in blocks
+  # Build a block only once it is required, instead of staggering every
+  # off-screen block into existence in the background. This board carries ~36
+  # blocks across five views, so the default pass spends the whole startup
+  # constructing blocks nobody is looking at.
+  blockr.background_construction_delay = Inf,
   blockr.ai_model       = "gpt-5.1"   # prod model; needs OPENAI_API_KEY set
 )
 

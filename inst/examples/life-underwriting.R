@@ -28,6 +28,11 @@ options(
   blockr.tabular_display   = blockr.ui::html_table_display,
   blockr.session_url_params   = TRUE,
   blockr.lazy_eval            = FALSE,
+  # Build a block only once it is required, instead of staggering every
+  # off-screen block into existence in the background. This board carries ~40
+  # blocks across five views, so the default pass spends the whole startup
+  # constructing blocks nobody is looking at.
+  blockr.background_construction_delay = Inf,
   blockr.ai_model             = "gpt-4o-mini"
 )
 
