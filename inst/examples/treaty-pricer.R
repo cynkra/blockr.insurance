@@ -560,50 +560,53 @@ board <- new_dock_board(
   # Each screen is a GRID (rows of side-by-side panels) rather than one cramped
   # row — top-level `orientation = "vertical"` stacks the rows; each nested
   # list splits horizontally.
-  layouts = list(
+  grids = list(
     # Cockpit: the one treaty tower on top, programme KPI tile in the middle,
     # the price visuals below. Edit a layer's expected loss / retention / limit
     # and the KPIs, the quote and the build-up waterfall all move. (The fitted
     # αs live on the Loss model tab — that's fit detail, not a pricing view.)
     # Top row, three columns: upload the tower CSV (narrow), tweak it in the grid
     # (wide), programme KPIs (narrow). The two price charts fill the row below.
-    Pricer = dock_layout(
+    Pricer = dock_grid(
       group("treaty_read", "treaty_tower", "prog_kpi", sizes = c(1, 2.5, 1)),
       list("quote_chart", "price_waterfall"),
-      orientation = "vertical", sizes = c(1, 1),
-      name = "Pricer"),
+      orientation = "vertical", sizes = c(1, 1)),
     # Loss model, a 2x2 grid: the Pareto fit (sharing one tabbed panel with its
     # αs chart + table, fit open) and the simulate block on top; the specified-
     # vs-simulated reconciliation and the exceedance curve below.
-    Loss_model = dock_layout(
+    Loss_model = dock_grid(
       list(
         # Tabs render with the LAST one active, so put `fit` last to open on it.
         panels("fit_chart", "fit_table_view", "fit", active = "fit"),
         "simulate"
       ),
       list("recon_chart", "exceedance"),
-      orientation = "vertical", sizes = c(1, 1),
-      name = "Loss model"),
+      orientation = "vertical", sizes = c(1, 1)),
     # One drill path only: click a layer in the bar -> its loss-distribution
     # histogram + scorecard.
-    Layer_detail = dock_layout(
+    Layer_detail = dock_grid(
       "layer_bar", "layer_hist", "layer_detail_tile",
-      sizes = c(1.4, 1.4, 1),
-      name = "Layer detail"),
+      sizes = c(1.4, 1.4, 1)),
     # Base treaty tower and challenger side by side, with the diff below.
-    Compare = dock_layout(
+    Compare = dock_grid(
       list("treaty_tower", "challenger_tower"),
       list("compare_table", "compare_bar"),
-      orientation = "vertical", sizes = c(1, 1.2),
-      name = "Compare"),
+      orientation = "vertical", sizes = c(1, 1.2)),
     # Workflow: the live block graph, blocks grouped into coloured STACKS by
     # role so the data flow reads at a glance.
-    Workflow = dock_layout(
-      "ext_panel-dag_extension",
-      name = "Workflow")
+    Workflow = dock_grid(
+      "ext_panel-dag_extension")
   ),
   active = "Pricer"
 )
+
+# View ids may only contain letters, digits and . - _ , and dock_grid() carries
+# no display label, so tab captions with a space are set on the views afterwards.
+# The views themselves are reconstructed from the grids above.
+vws <- board_views(board)
+view_name(vws[["Loss_model"]]) <- "Loss model"
+view_name(vws[["Layer_detail"]]) <- "Layer detail"
+board_views(board) <- vws
 
 serve(
   board,

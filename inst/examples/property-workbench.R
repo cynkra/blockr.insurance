@@ -341,39 +341,43 @@ board <- new_dock_board(
   # vertically within a column; panels() puts two blocks on one tabbed
   # panel. Upstream plumbing (portfolio_inputs, base_premium, the *_sum and
   # *_wf_long helpers) is left out of the layouts so it stays hidden.
-  layouts = list(
+  grids = list(
     # Engine selection — two columns. Left: Scope over the Base engine.
     # Right (wide): the Base rate grid over the price build-up waterfall,
     # so a rate edit and its effect sit one above the other.
-    Engine_selection = dock_layout(
+    Engine_selection = dock_grid(
       group("policy_picker", "base_price",       sizes = c(1, 2.8)),
       group("base_grid",     "policy_waterfall", sizes = c(1, 1)),
-      sizes = c(1, 3.4),
-      name = "Engine selection"
+      sizes = c(1, 3.4)
     ),
     # Analysis — three columns. Left (narrow): crossfilter over the KPI
     # tile. Middle: the two drilldown bars stacked. Right: scatter and
     # waterfall sharing one tabbed panel for single-policy drill-in.
-    Analysis = dock_layout(
+    Analysis = dock_grid(
       group("analysis_xfilter",        "portfolio_kpi",         sizes = c(1.9, 1)),
       group("portfolio_drill_country", "portfolio_drill_peril", sizes = c(1, 1.1)),
       panels("policy_scatter", "policy_waterfall"),
-      sizes = c(1, 2.9, 2.3),
-      name = "Analysis"
+      sizes = c(1, 2.9, 2.3)
     ),
     # Compare — three columns. Left: Scope over the diff crossfilter.
     # Middle: Challenger engine over its rate grid. Right: the diff
     # waterfall and Challenger premium sharing a tabbed panel.
-    Compare = dock_layout(
+    Compare = dock_grid(
       group("policy_picker", "compare_portfolio_xfilter", sizes = c(1, 3.3)),
       group("chal_price",    "chal_grid",                 sizes = c(1, 3.6)),
       panels("compare_portfolio_waterfall", "chal_premium"),
-      sizes = c(1.5, 1.6, 2.5),
-      name = "Compare"
+      sizes = c(1.5, 1.6, 2.5)
     )
   ),
   active = "Engine_selection"
 )
+
+# View ids may only contain letters, digits and . - _ , and dock_grid() carries
+# no display label, so a tab caption with a space is set on the view afterwards.
+# The views themselves are reconstructed from the grids above.
+vws <- board_views(board)
+view_name(vws[["Engine_selection"]]) <- "Engine selection"
+board_views(board) <- vws
 
 serve(
   board,

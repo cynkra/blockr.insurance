@@ -556,44 +556,40 @@ board <- new_dock_board(
   # flips at each level, so a group inside a horizontal root stacks
   # vertically), `sizes` sets the split ratios (raw pixel widths from the
   # saved board — only the proportions matter), and `panels()` makes a
-  # tabbed leaf. See `?blockr.dock::dock_layout`.
-  layouts = list(
+  # tabbed leaf. See `?blockr.dock::dock_grid`.
+  grids = list(
     # Left column: the read block (compact) stacked above the tweak grid
     # (tall); right half: the overview chart. ~50/50 split.
-    Inputs = dock_layout(
+    Inputs = dock_grid(
       group("employees_read", "employees_edit", sizes = c(292, 726)),
       "employees_chart",
-      sizes = c(930, 940),
-      name = "Inputs"
+      sizes = c(930, 940)
     ),
-    Claims = dock_layout(
+    Claims = dock_grid(
       group("claims_read", "claims_edit", sizes = c(298, 720)),
       "claims_chart",
-      sizes = c(930, 940),
-      name = "Claims"
+      sizes = c(930, 940)
     ),
     # Three columns: global filter | underwriter worksheet | (portfolio
     # totals tile stacked above the premium build-up waterfall). The
     # kpi_totals_sum summarize is an intermediate — kept out of the view.
-    Underwrite = dock_layout(
+    Underwrite = dock_grid(
       "global_filter",
       "uwr_edit",
       group("kpi_totals", "premium_waterfall", sizes = c(342, 676)),
-      sizes = c(371, 477, 1011),
-      name = "Underwrite"
+      sizes = c(371, 477, 1011)
     ),
     # Filter on the left, then two tabbed columns of driver charts.
-    Analysis = dock_layout(
+    Analysis = dock_grid(
       "global_filter",
       panels("age_chart", "cty_chart", "ssm_chart"),
       panels("pol_chart", "uw_chart", "preview"),
-      sizes = c(350, 689, 821),
-      name = "Analysis"
+      sizes = c(350, 689, 821)
     ),
     # DAG viewer prominent on the left; the pipeline guts grouped into
     # three stacked tabbed rows on the right (sources / joins+formula /
     # premium build-up).
-    Actuarial = dock_layout(
+    Actuarial = dock_grid(
       "dag_extension",
       group(
         panels("uw_factors_src", "incidence_src",
@@ -603,8 +599,7 @@ board <- new_dock_board(
         panels("premium_calc", "premium_long", "premium_steps"),
         sizes = c(1, 1, 1)
       ),
-      sizes = c(656, 1214),
-      name = "Actuarial"
+      sizes = c(656, 1214)
     )
   ),
   active = "Inputs"
