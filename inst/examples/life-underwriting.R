@@ -603,7 +603,9 @@ board <- new_dock_board(
     # three stacked tabbed rows on the right (sources / joins+formula /
     # premium build-up).
     Actuarial = dock_grid(
-      "dag_extension",
+      # ext(), not "dag_extension": extension ids are container-owned, so the
+      # class-derived name resolves to nothing and the viewer silently vanishes.
+      ext("dag"),
       group(
         panels("uw_factors_src", "incidence_src",
                "country_src", "annuity_src"),
