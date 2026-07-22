@@ -63,11 +63,19 @@ for (pkg in blockr_pkgs) {
 }
 
 # ---- Curate the block browser ----------------------------------------------
-# Keep ONLY `dataset` and `glue` from blockr.core; drop its low-level / noise
-# blocks (subset, merge, rbind, head, scatter, csv, filebrowser, upload) via
+# Keep `dataset`, `glue` and `head` from blockr.core; drop its low-level /
+# noise blocks (subset, merge, rbind, scatter, csv, filebrowser, upload) via
 # unregister_blocks(), selecting by the registry `package` attribute so only
 # core blocks are affected.
-core_keep <- c("dataset_block", "glue_block")
+#
+# `head_block` MUST stay registered: this board constructs two of them
+# (`pol_head`, `preview`) below. A block constructor whose registry entry has
+# been removed still returns a block, but that block carries NO metadata --
+# only a warning is emitted. Anything that later reads the metadata then
+# aborts hard: blockr.dag's g6 init does exactly that (blks_icon ->
+# block_metadata()), so unregistering head_block took the whole app down with
+# "Block head_block carries no metadata." and a blank dock.
+core_keep <- c("dataset_block", "glue_block", "head_block")
 core_drop <- setdiff(
   names(Filter(
     function(entry) identical(attr(entry, "package"), "blockr.core"),
