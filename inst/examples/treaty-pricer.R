@@ -598,9 +598,13 @@ board <- new_dock_board(
       list("compare_table", "compare_bar"),
       orientation = "vertical", sizes = c(1, 1.2)),
     # Workflow: the live block graph, blocks grouped into coloured STACKS by
-    # role so the data flow reads at a glance.
+    # role so the data flow reads at a glance. Address the extension by the key
+    # it is mounted under via ext(), not "ext_panel-dag_extension": since
+    # blockr.dock made extension ids container-owned, the class-derived name
+    # resolves to nothing and the board aborts with "Layout references unknown
+    # panel".
     Workflow = dock_grid(
-      "ext_panel-dag_extension")
+      ext("dag"))
   ),
   active = "Pricer"
 )
