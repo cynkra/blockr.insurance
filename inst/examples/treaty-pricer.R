@@ -193,13 +193,16 @@ board_blocks <- c(
       block_name = "Fit αs"
     ),
     fit_chart = new_chart_block(
-      chart_type = "bar", group = "threshold", metric = "alpha",
-      agg_fn = "mean", sort_by = "threshold", sort_dir = "asc",
+      chart_type = "bar", group = "threshold", value = "alpha",
+      func = "mean", sort_by = "threshold", sort_dir = "asc",
       orientation = "vertical",
+      title = "Fitted Pareto α by threshold",
+      subtitle = "One α per layer of the tower",
       block_name = "Pareto αs"
     ),
     fit_table_view = new_table_block(
       rowname = "threshold", values = c("alpha", "freq"), digits = 3L,
+      title = "Fitted Pareto parameters",
       block_name = "α table"
     ),
 
@@ -266,9 +269,11 @@ board_blocks <- c(
       block_name = "Quote (long)"
     ),
     quote_chart = new_chart_block(
-      chart_type = "bar", group = "layer_id", metric = "value",
-      color = "measure", agg_fn = "sum", bar_mode = "grouped",
+      chart_type = "bar", group = "layer_id", value = "value",
+      color = "measure", func = "sum", bar_mode = "grouped",
       sort_by = "layer_id", sort_dir = "asc", orientation = "vertical",
+      title = "Expected loss and technical premium by layer",
+      subtitle = "USD m; technical premium is expected loss × 1.30",
       block_name = "Quote"
     ),
 
@@ -301,15 +306,19 @@ board_blocks <- c(
       block_name = "Build-up (long)"
     ),
     price_waterfall = new_chart_block(
-      chart_type = "waterfall", group = "step", metric = "value",
-      agg_fn = "sum", waterfall_totals = "technical_premium",
+      chart_type = "waterfall", group = "step", value = "value",
+      func = "sum", waterfall_totals = "technical_premium",
+      title = "From pure loss to technical premium",
+      subtitle = "Programme total in USD m",
       block_name = "Premium build-up"
     ),
 
     # === PER-LAYER BAR — drill source #1 (year detail) ===
     layer_bar = new_chart_block(
-      chart_type = "bar", group = "layer_id", metric = "ceded", agg_fn = "mean",
+      chart_type = "bar", group = "layer_id", value = "ceded", func = "mean",
       drill = "layer_id", sort_by = "layer_id", sort_dir = "asc",
+      title = "Expected ceded loss by layer",
+      subtitle = "Mean over the simulated years, USD m. Click a layer for its detail",
       block_name = "By layer"
     ),
 
@@ -325,9 +334,11 @@ board_blocks <- c(
       block_name = "Bin ceded"
     ),
     layer_hist = new_chart_block(
-      chart_type = "bar", group = "ceded_band", metric = "ceded",
-      agg_fn = "count", sort_by = "ceded_band", sort_dir = "asc",
+      chart_type = "bar", group = "ceded_band", value = "ceded",
+      func = "count", sort_by = "ceded_band", sort_dir = "asc",
       orientation = "vertical",
+      title = "Annual ceded loss distribution",
+      subtitle = "Simulated years per USD m band",
       block_name = "Loss distribution"
     ),
     layer_detail_sum = new_summarize_block(
@@ -367,7 +378,9 @@ board_blocks <- c(
     ),
     exceedance = new_chart_block(
       chart_type = "line", x = "return_period", y = "total_ceded",
-      metric = ".count",
+      value = ".count",
+      title = "Programme exceedance curve",
+      subtitle = "Annual ceded loss in USD m against the return period in years",
       block_name = "Exceedance"
     ),
 
@@ -394,9 +407,11 @@ board_blocks <- c(
       block_name = "Recon (long)"
     ),
     recon_chart = new_chart_block(
-      chart_type = "bar", group = "layer_id", metric = "value",
-      color = "source", agg_fn = "sum", bar_mode = "grouped",
+      chart_type = "bar", group = "layer_id", value = "value",
+      color = "source", func = "sum", bar_mode = "grouped",
       sort_by = "layer_id", sort_dir = "asc", orientation = "vertical",
+      title = "Specified vs simulated layer loss",
+      subtitle = "Mean annual layer loss before aggregates, USD m",
       block_name = "Specified vs simulated"
     ),
 
@@ -438,11 +453,15 @@ board_blocks <- c(
       cell_color = drilldown_table_color("diverging",
         columns = c("expected_loss", "technical_premium")),
       digits = 2L,
+      title = "Challenger minus base",
+      subtitle = "Per layer, USD m",
       block_name = "Diff table"
     ),
     compare_bar = new_chart_block(
-      chart_type = "bar", group = "layer_id", metric = "technical_premium",
-      agg_fn = "sum", sort_by = "layer_id", sort_dir = "asc",
+      chart_type = "bar", group = "layer_id", value = "technical_premium",
+      func = "sum", sort_by = "layer_id", sort_dir = "asc",
+      title = "Technical premium change by layer",
+      subtitle = "Challenger minus base, USD m",
       block_name = "Premium Δ"
     )
 )
