@@ -122,9 +122,13 @@ options(
 treaty_csv <- system.file("extdata", "treaty_tower.csv",
                           package = "blockr.insurance")
 
-# The challenger reads the SAME file, so base and challenger start IDENTICAL and
-# the Compare diff is zero out of the box. Change a structure value on the
-# challenger and the diff appears — the cleanest way to show a restructuring.
+# The challenger reads the same structure without `expected_loss`: it reuses the
+# base fit and simulated losses, so a loss pick on it would be ignored. Its
+# structure equals the base, so the Compare diff is zero out of the box. Change a
+# structure value on the challenger and the diff appears. Only a cap or
+# deductible that the simulated years actually reach moves the price.
+challenger_csv <- system.file("extdata", "treaty_tower_challenger.csv",
+                              package = "blockr.insurance")
 
 # The per-claim layering, shared verbatim by the base and challenger runs:
 # per-occurrence layering → annual total per layer → annual aggregate (AAD/AAL).
@@ -416,9 +420,9 @@ board_blocks <- c(
     ),
 
     # === CHALLENGER — parallel structure on the SAME simulated losses ===
-    # Reads the same CSV as the base, so it starts identical (diff = 0).
+    # The base structure without expected_loss, so it starts identical (diff = 0).
     challenger_read = new_read_block(
-      path = treaty_csv, source = "path",
+      path = challenger_csv, source = "path",
       block_name = "Upload challenger (CSV)"),
     challenger_tower = blockr.input::new_grid_edit_block(
       state = list(key_col = "layer_id"),
