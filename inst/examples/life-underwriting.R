@@ -90,13 +90,14 @@ core_drop <- setdiff(
 )
 unregister_blocks(core_drop)
 
-# CSV paths shipped with the package — `new_read_block(source = "path")`
-# defaults to these so the workspace runs end-to-end on first launch. The
-# UWR can swap to upload-mode via the read block's cogwheel.
-employees_csv <- system.file("extdata", "employees.csv",
-                             package = "blockr.insurance")
-claims_csv    <- system.file("extdata", "life_claims.csv",
-                             package = "blockr.insurance")
+# The CSVs shipped in the package's inst/extdata, read from GitHub so the read
+# block shows a public URL instead of a path into the R library. The
+# `new_read_block(source = "path")` defaults to these so the workspace runs
+# end-to-end on first launch. The UWR can swap to upload-mode via the read
+# block's cogwheel.
+extdata_url   <- "https://raw.githubusercontent.com/cynkra/blockr.insurance/main/inst/extdata/"
+employees_csv <- paste0(extdata_url, "employees.csv")
+claims_csv    <- paste0(extdata_url, "life_claims.csv")
 
 # Valuation date drives the age calculation. Edit via the cogwheel of the
 # `age_calc` block in the Setup tab.

@@ -119,16 +119,17 @@ options(
 # output. Columns are ordered deductible → cap at each level: per-occurrence
 # (retention, limit) then annual-aggregate (agg_retention, agg_limit), with the
 # actuary's expected_loss last.
-treaty_csv <- system.file("extdata", "treaty_tower.csv",
-                          package = "blockr.insurance")
+# Read from GitHub (the package's inst/extdata) so the read block shows a public
+# URL instead of a path into the R library.
+extdata_url <- "https://raw.githubusercontent.com/cynkra/blockr.insurance/main/inst/extdata/"
+treaty_csv  <- paste0(extdata_url, "treaty_tower.csv")
 
 # The challenger reads the same structure without `expected_loss`: it reuses the
 # base fit and simulated losses, so a loss pick on it would be ignored. Its
 # structure equals the base, so the Compare diff is zero out of the box. Change a
 # structure value on the challenger and the diff appears. Only a cap or
 # deductible that the simulated years actually reach moves the price.
-challenger_csv <- system.file("extdata", "treaty_tower_challenger.csv",
-                              package = "blockr.insurance")
+challenger_csv <- paste0(extdata_url, "treaty_tower_challenger.csv")
 
 # The per-claim layering, shared verbatim by the base and challenger runs:
 # per-occurrence layering → annual total per layer → annual aggregate (AAD/AAL).
