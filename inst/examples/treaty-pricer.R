@@ -258,7 +258,8 @@ board_blocks <- c(
       by = list(),
       block_name = "Totals"
     ),
-    prog_kpi = new_tile_block(
+    prog_kpi = new_table_block(
+      look = "cards",
       value = c("Expected ceded loss", "Technical premium"),
       format = "number", unit = "USD m",
       block_name = "KPIs"
@@ -358,7 +359,8 @@ board_blocks <- c(
       by = list(),
       block_name = "Layer totals"
     ),
-    layer_detail_tile = new_tile_block(
+    layer_detail_tile = new_table_block(
+      look = "cards",
       value = c("Expected ceded loss", "Worst-year ceded", "Technical premium"),
       format = "number", unit = "USD m",
       block_name = "Layer KPIs"

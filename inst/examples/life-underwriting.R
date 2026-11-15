@@ -478,7 +478,8 @@ board <- new_dock_board(
       by = character(),
       block_name = "Portfolio totals"
     ),
-    kpi_totals = new_tile_block(
+    kpi_totals = new_table_block(
+      look = "cards",
       value = c("Expected claims (EUR)", "Net premium (EUR)",
                 "Gross premium (EUR)"),
       format = "compact",

@@ -181,7 +181,8 @@ board <- new_dock_board(
       by = character(),
       block_name = "Portfolio totals"
     ),
-    portfolio_kpi = new_tile_block(
+    portfolio_kpi = new_table_block(
+      look = "cards",
       value = c("Total Model Price (Base)", "Total Exposure Premium (Base)"),
       format = "compact",
       block_name = "KPIs"
