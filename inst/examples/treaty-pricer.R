@@ -64,7 +64,6 @@ blockr_pkgs <- c(
   "blockr.dplyr",
   "blockr.input",     # the one editable treaty_tower grid (client structure)
   "blockr.script",    # script blocks (Pareto fit, per-claim layering)
-  "blockr.extra",     # the challenger-vs-base compare block
   "blockr.io",
   "blockr.viz",
   "blockr.dag",

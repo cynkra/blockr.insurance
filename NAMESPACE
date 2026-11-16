@@ -2,11 +2,13 @@
 
 export(apply_labels)
 export(available_engines)
+export(compare_frames)
 export(default_comparison_portfolio_dir)
 export(default_portfolio_dir)
 export(engine_property)
 export(engine_property_v2)
 export(list_policies)
+export(new_compare_block)
 export(new_insurance_dataset_block)
 export(new_policy_loader_block)
 export(new_portfolio_inputs_block)

@@ -1,0 +1,15 @@
+/* Compare block — four fields in a responsive grid. */
+
+.compare-block-grid {
+  display: grid;
+  gap: 12px;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  padding-bottom: 10px;
+}
+
+.compare-block-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}

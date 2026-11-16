@@ -73,5 +73,17 @@
     package = pkgname,
     overwrite = TRUE
   )
+  blockr.core::register_blocks(
+    "new_compare_block",
+    name = "Compare",
+    description = paste(
+      "Compare two data frames on key columns and compute diff metrics",
+      "on measurement columns."
+    ),
+    category = "transform",
+    icon = "arrow-left-right",
+    package = pkgname,
+    overwrite = TRUE
+  )
   invisible(NULL)
 }

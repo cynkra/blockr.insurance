@@ -40,7 +40,8 @@ Imports:
     jsonlite,
     shiny,
     rlang,
-    stats
+    stats,
+    utils
 Suggests:
     insuranceData,
     ChainLadder,
@@ -52,7 +53,6 @@ Suggests:
     blockr.viz,
     blockr.dag,
     blockr.session,
-    blockr.extra,
     blockr.input,
     blockr.code,
     Pareto,

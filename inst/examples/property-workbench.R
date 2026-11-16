@@ -42,7 +42,6 @@ blockr_pkgs <- c(
   "blockr.dplyr",
   "blockr.viz",
   "blockr.input",     # editable base_rate parameter grids (Base / Challenger)
-  "blockr.extra",
   "blockr.session",
   "blockr.ai",
   "blockr.code",      # show / export the generated R code
