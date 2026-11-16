@@ -41,9 +41,6 @@ options(
 # packages with library(). Set it to TRUE -- or source this file from the
 # dev/life-underwriting.R wrapper -- to load every blockr package from its LOCAL
 # source checkout with pkgload::load_all(). One board, two loaders, no drift.
-# NB: blockr.extra overrides block_output for data/transform blocks so the
-# html_table_preview option fires on initial load; without it tile / waterfall
-# outputs stay suspended until you nudge a block.
 if (!exists("dev_local")) dev_local <- FALSE
 
 blockr_pkgs <- c(
@@ -56,7 +53,6 @@ blockr_pkgs <- c(
   "blockr.input",     # editable data grid (the UWR uw_factors worksheet)
   "blockr.io",
   "blockr.session",
-  "blockr.extra",
   "blockr.ai",
   "blockr.code",      # show / export the generated R code
   "blockr.insurance"  # census + claims data, formula chain, this example

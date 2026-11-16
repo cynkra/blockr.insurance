@@ -8,7 +8,7 @@
 # same tower's structure is then applied to the simulated losses to get a price.
 #
 # Built from bare, transparent blocks: everything expressible as a dplyr verb
-# is a blockr.dplyr block, and only a few small function blocks remain — the
+# is a blockr.dplyr block, and only a few small script blocks remain — the
 # Pareto calls, the fit table, and the per-claim layering (the one step that
 # isn't a dplyr verb). Aggregation and pricing are summarize/mutate blocks you
 # can read off the UI; every VIEW is a blockr.viz tile / chart / table.
@@ -16,7 +16,7 @@
 # The actuary's inputs, all on the one editable `treaty_tower` grid + one knob:
 #   - expected loss per layer → the `expected_loss` column (judgment). With the
 #     layer `retention`s as attachment points, these calibrate the severity fit.
-#   - the frequency anchor    → the `frequency` field on the `fit` function
+#   - the frequency anchor    → the `frequency` field on the `fit` script
 #     block (FQ at the lowest attachment point). The method SOLVES the higher-
 #     layer frequencies, so a single anchor is supplied, not a column — per-
 #     layer frequencies over-determine the match and the αs go degenerate.
@@ -27,7 +27,7 @@
 #     QUOTE chart (loss vs technical premium, grouped bars) + a premium BUILD-UP
 #     waterfall (pure loss → +risk → +expense → +profit → technical). Edit a
 #     layer and the KPIs, the quote and the waterfall recompute live.
-#   - Loss model: the fit function block grouped with its fitted αs (chart +
+#   - Loss model: the fit script block grouped with its fitted αs (chart +
 #     table) below it; simulate + the exceedance / return-period curve; and the
 #     specified-vs-simulated reconciliation (grouped bar) — the severity-fit and
 #     simulation detail, away from the price view.
@@ -63,7 +63,8 @@ blockr_pkgs <- c(
   "blockr.dock",
   "blockr.dplyr",
   "blockr.input",     # the one editable treaty_tower grid (client structure)
-  "blockr.extra",     # function blocks (Pareto fit, per-claim layering)
+  "blockr.script",    # script blocks (Pareto fit, per-claim layering)
+  "blockr.extra",     # the challenger-vs-base compare block
   "blockr.io",
   "blockr.viz",
   "blockr.dag",
@@ -137,20 +138,18 @@ challenger_csv <- paste0(extdata_url, "treaty_tower_challenger.csv")
 # `specified` (the actuary's input loss pick, when present) so a reconciliation
 # view can check specified vs simulated without a join. The challenger tower has
 # no expected_loss column, so `specified` falls back to NA there (unused).
-layering_fn <- "function(...) {
-  args <- list(...); x <- args[[1L]]; y <- args[[2L]]
-  do.call(rbind, lapply(seq_len(nrow(y)), function(i) {
-    loss   <- pmin(pmax(x$severity - y$retention[i], 0), y$limit[i])
-    annual <- tapply(loss, x$year, sum)
-    data.frame(
-      layer_id   = y$layer_id[i],
-      year       = as.integer(names(annual)),
-      layer_loss = as.numeric(annual),
-      ceded      = as.numeric(pmin(pmax(annual - y$agg_retention[i], 0), y$agg_limit[i])),
-      specified  = if (is.null(y$expected_loss)) NA_real_ else y$expected_loss[i]
-    )
-  }))
-}"
+# The script reads its two inputs by link name: `claims` and `tower`.
+layering_script <- "do.call(rbind, lapply(seq_len(nrow(tower)), function(i) {
+  loss   <- pmin(pmax(claims$severity - tower$retention[i], 0), tower$limit[i])
+  annual <- tapply(loss, claims$year, sum)
+  data.frame(
+    layer_id   = tower$layer_id[i],
+    year       = as.integer(names(annual)),
+    layer_loss = as.numeric(annual),
+    ceded      = as.numeric(pmin(pmax(annual - tower$agg_retention[i], 0), tower$agg_limit[i])),
+    specified  = if (is.null(tower$expected_loss)) NA_real_ else tower$expected_loss[i]
+  )
+}))"
 
 # Premium build-up applied per layer: pure loss plus named loadings. The
 # technical premium IS the price — pure_loss × (1 + 0.15 + 0.05 + 0.10) = × 1.30.
@@ -175,26 +174,24 @@ board_blocks <- c(
       block_name = "Treaty tower"),
 
     # === FIT (Pareto) — emits the fitted model; owns the frequency anchor.
-    # `frequency` renders as a numericInput on the block — the second actuary
+    # `frequency` renders as a number control on the block — the second actuary
     # input. The method solves the higher-layer frequencies from this anchor.
-    fit = new_function_block(
-      fn = "function(data, frequency = 10) {
-  Pareto::PiecewisePareto_Match_Layer_Losses(
-    Attachment_Points     = data$retention,
-    Expected_Layer_Losses = data$expected_loss,
-    FQ_at_lowest_AttPt    = frequency
-  )
-}",
+    fit = new_script_block(
+      script = "frequency <- 10
+
+Pareto::PiecewisePareto_Match_Layer_Losses(
+  Attachment_Points     = data$retention,
+  Expected_Layer_Losses = data$expected_loss,
+  FQ_at_lowest_AttPt    = frequency
+)",
       block_name = "Fit"
     ),
-    fit_table = new_function_block(
-      fn = "function(data) {
-  data.frame(
-    threshold = round(data$t, 2),
-    alpha     = round(data$alpha, 3),
-    freq      = data$FQ
-  )
-}",
+    fit_table = new_script_block(
+      script = "data.frame(
+  threshold = round(data$t, 2),
+  alpha     = round(data$alpha, 3),
+  freq      = data$FQ
+)",
       block_name = "Fit αs"
     ),
     fit_chart = new_chart_block(
@@ -212,23 +209,24 @@ board_blocks <- c(
     ),
 
     # === SIMULATE (Pareto) — one row per simulated claim ===
-    simulate = new_function_block(
-      fn = "function(data, nyears = 5000, seed = 1) {
-  set.seed(seed)
-  losses <- Pareto::Simulate_Losses(data, nyears = nyears)
-  data.frame(
-    year     = row(losses)[!is.na(losses)],
-    severity = losses[!is.na(losses)]
-  )
-}",
+    simulate = new_script_block(
+      script = "nyears <- 5000
+seed <- 1
+
+set.seed(seed)
+.losses <- Pareto::Simulate_Losses(data, nyears = nyears)
+data.frame(
+  year     = row(.losses)[!is.na(.losses)],
+  severity = .losses[!is.na(.losses)]
+)",
       block_name = "Simulate"
     ),
 
     # === APPLY STRUCTURE — per-claim layering (the only non-dplyr step) ===
     # y is the treaty tower itself (limit/retention/agg); x is the simulated
     # claims. Same tower that calibrated the fit now prices the deal.
-    apply_structure = blockr.extra::new_function_var_block(
-      fn = layering_fn,
+    apply_structure = new_script_block(
+      script = layering_script,
       block_name = "Apply structure"
     ),
 
@@ -430,8 +428,8 @@ board_blocks <- c(
     challenger_tower = blockr.input::new_grid_edit_block(
       state = list(key_col = "layer_id"),
       block_name = "Challenger"),
-    chal_apply_structure = blockr.extra::new_function_var_block(
-      fn = layering_fn,
+    chal_apply_structure = new_script_block(
+      script = layering_script,
       block_name = "Apply challenger"
     ),
     chal_layer_stats = new_summarize_block(
@@ -535,7 +533,7 @@ board <- new_dock_board(
     ),
     input = c(
       "data", "data", "data", "data", "data", "data",
-      "1", "2",
+      "claims", "tower",
       "data", "data",
       "data", "data",
       "data", "data",
@@ -544,7 +542,7 @@ board <- new_dock_board(
       "data", "data",
       "data", "data", "data",
       "data", "data", "data",
-      "data", "1", "2",
+      "data", "claims", "tower",
       "data", "data",
       "x", "y",
       "data", "data"
